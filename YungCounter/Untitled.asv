@@ -1,0 +1,3 @@
+A = load('probs.txt');
+x = range(1: size(A, 1));
+plot(A(:, 1), A(:, 2), 'b.');
