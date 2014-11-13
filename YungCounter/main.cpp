@@ -4,26 +4,35 @@
 
 using namespace std;
 #define _CRT_SECURE_NO_WARNINGS
+
+enum ProcessType 
+{
+  RICHARDSON,
+  ALPHA
+};
+
 int main(void)
 {
-  YungDiagram diagram("max_diagram_to_count_prob.txt");
+  YungDiagram d2(0xFFFFFFFFU);
+  d2.SaveToFile("Max_diagram_with_unsigned_number.txt");
 
-  cout << diagram.GetDiagramNumber() << endl;
+  ProcessType procType = ALPHA;
+  size_t cellsNumber = 4;
+  const char *fileName = 0;
 
-  boost::xint::integer number("28");
-  YungDiagram d2(number);
-  d2.SaveToFile("diagram5.txt");
+  switch (procType)
+  {
+  case RICHARDSON:
+    YungDiagramHandler::CountRichardsonProbabilities(cellsNumber);
+    fileName = "probs_richardson.txt";
+    break;
+  case ALPHA:
+    YungDiagramHandler::CountAlphaProbabilities(cellsNumber, -0.3);
+    fileName = "probs_alpha.txt";
+    break;
+  }
+  YungDiagramHandler::SortByProbability();
 
-  diagram.GetMyProbabilityRichardson();
-
-  YungDiagram::CountProbabilities(50);
-  YungDiagram::SortByProbability();
-
-  FILE *f;
-  fopen_s(&f, "probs.txt", "w");
-  for (size_t i = 0; i < YungDiagram::levelSize; i++)
-    fprintf(f, "%u %.16lf\n", YungDiagram::numbers[i], YungDiagram::probabilities[i]);
-
-  fclose(f);
+  YungDiagramHandler::saveProbabilities(fileName);
   return 0;
 }

@@ -19,4 +19,5 @@
 *.dll_suf
 *.obj
 *.exp
+*.jpg
 Framework/*

@@ -3,11 +3,11 @@
 #include "YungDiagram.h"
 
 using namespace std;
-boost::xint::integer *YungDiagram::partitionsAmount = 0;
-long long *YungDiagram::offsets = 0;
-double *YungDiagram::probabilities = 0;
-size_t *YungDiagram::numbers = 0;
-size_t YungDiagram::levelSize = 0;
+boost::xint::integer *YungDiagramHandler::partitionsAmount = 0;
+long long *YungDiagramHandler::offsets = 0;
+double *YungDiagramHandler::probabilities = 0;
+size_t *YungDiagramHandler::numbers = 0;
+size_t YungDiagramHandler::levelSize = 0;
 
 YungDiagram::YungDiagram() : m_cellsNumber(0), m_colsNumber(0), m_cols(0), m_numberIsCounted(false), 
   m_number(0), m_probability(0), m_ancestorsNumber(0), m_ancestors(0), m_ancestorsAreCounted(false)
@@ -37,12 +37,13 @@ YungDiagram::YungDiagram(const char *fileName) : m_cellsNumber(0), m_colsNumber(
 YungDiagram::YungDiagram(const boost::xint::integer &number) :  m_cellsNumber(0), m_colsNumber(0), m_cols(0), m_numberIsCounted(true), m_number(0),
   m_probability(0), m_ancestorsNumber(0), m_ancestors(0)
 {
-  if (!partitionsAmount)
-  {
-    CountPartitionsAmount();
-  }
+  if (!YungDiagramHandler::isPartitionsAmountCounted())
+    YungDiagramHandler::countPartitionsAmount();
 
-  for (size_t i = 0; i < maxCellsNumber; ++i)
+  const boost::xint::integer *partitionsAmount = YungDiagramHandler::getPartitionsAmount();
+  const long long *offsets = YungDiagramHandler::getOffsets();
+
+  for (size_t i = 0; i < YungDiagramHandler::maxCellsNumber; ++i)
   {
     m_number += partitionsAmount[offsets[i] + i];
     if (m_number > number)
@@ -83,7 +84,7 @@ YungDiagram::YungDiagram(const boost::xint::integer &number) :  m_cellsNumber(0)
   delete[] temp;
 }
 
-void YungDiagram::CountPartitionsAmount()
+void YungDiagramHandler::countPartitionsAmount()
 {
   int size = (maxCellsNumber + 1) * maxCellsNumber >> 1;
   partitionsAmount = new boost::xint::integer[size];
@@ -119,10 +120,11 @@ boost::xint::integer YungDiagram::GetDiagramNumber() const
     return m_number;
 
   m_number = 0;
-  if (!partitionsAmount)
-  {
-    CountPartitionsAmount();
-  }
+  if (!YungDiagramHandler::isPartitionsAmountCounted())
+    YungDiagramHandler::countPartitionsAmount();
+
+  const boost::xint::integer *partitionsAmount = YungDiagramHandler::getPartitionsAmount();
+  const long long *offsets = YungDiagramHandler::getOffsets();
 
   for (size_t i = 0; i < m_cellsNumber - 1; ++i)
     m_number += partitionsAmount[offsets[i] + i];
@@ -178,7 +180,7 @@ void YungDiagram::countAncestors()
   m_ancestors = new size_t[m_ancestorsNumber];
   m_ancestorsColDifferent = new size_t[m_ancestorsNumber];
   m_cols[0]++;
-  m_ancestors[0] = YungDiagram::GetSmallDiagramNumber(m_cellsNumber + 1, m_colsNumber, m_cols) - 1;
+  m_ancestors[0] = YungDiagramHandler::GetSmallDiagramNumber(m_cellsNumber + 1, m_colsNumber, m_cols) - 1;
   m_ancestorsColDifferent[0] = 0;
   m_cols[0]--;
 
@@ -188,24 +190,24 @@ void YungDiagram::countAncestors()
     if (m_cols[i] < m_cols[i - 1])
     {
       m_cols[i]++;
-      m_ancestors[index] = YungDiagram::GetSmallDiagramNumber(m_cellsNumber + 1, m_colsNumber, m_cols) - 1;
+      m_ancestors[index] = YungDiagramHandler::GetSmallDiagramNumber(m_cellsNumber + 1, m_colsNumber, m_cols) - 1;
       m_ancestorsColDifferent[index++] = i;
       m_cols[i]--;
     }
   }
 
-  m_ancestors[m_ancestorsNumber - 1] = YungDiagram::GetSmallDiagramNumber(m_cellsNumber + 1, m_colsNumber + 1, m_cols, true) - 1;
+  m_ancestors[m_ancestorsNumber - 1] = YungDiagramHandler::GetSmallDiagramNumber(m_cellsNumber + 1, m_colsNumber + 1, m_cols, true) - 1;
   m_ancestorsColDifferent[m_ancestorsNumber - 1] = m_colsNumber;
 
   m_ancestorsAreCounted = true;
 }
 
-size_t YungDiagram::GetSmallDiagramNumber(size_t cellsNumber, size_t colsNumber, const size_t *cols, bool withExtraCell)
+size_t YungDiagramHandler::GetSmallDiagramNumber(size_t cellsNumber, size_t colsNumber, const size_t *cols, bool withExtraCell)
 {
   size_t number = 0;
   if (!partitionsAmount)
   {
-    CountPartitionsAmount();
+    countPartitionsAmount();
   }
 
   for (size_t i = 0; i < cellsNumber - 1; ++i)
@@ -228,7 +230,7 @@ size_t YungDiagram::GetSmallDiagramNumber(size_t cellsNumber, size_t colsNumber,
   return number;
 }
 
-boost::xint::integer YungDiagram::GetMaxNumberWithNCells(size_t n)
+boost::xint::integer YungDiagramHandler::GetMaxNumberWithNCells(size_t n)
 {
   if (n >= maxCellsNumber)
   {
@@ -296,16 +298,16 @@ void YungDiagram::setCellsInCol(size_t colIndex, size_t cellsNumber)
   m_cellsNumber += (cellsNumber - prevCellsNumber);
 }
 
-void YungDiagram::CountProbabilities(size_t cellsNumber)
+void YungDiagramHandler::CountRichardsonProbabilities(size_t cellsNumber)
 {
-  size_t maxDiagramNumber = YungDiagram::GetMaxNumberWithNCells(cellsNumber)._get_digit(0);
-  levelSize = maxDiagramNumber - YungDiagram::GetMaxNumberWithNCells(cellsNumber - 1)._get_digit(0);
+  size_t maxDiagramNumber = YungDiagramHandler::GetMaxNumberWithNCells(cellsNumber)._get_digit(0); // it's number of first diagram with (cellsNumber + 1) cells
+  levelSize = maxDiagramNumber - YungDiagramHandler::GetMaxNumberWithNCells(cellsNumber - 1)._get_digit(0);
 
   probabilities = new double[levelSize];
   numbers = new size_t[levelSize];
 
   YungDiagram *diagrams = new YungDiagram[maxDiagramNumber + 1];
-  diagrams[0].SetMyProbabilityRichardson(1);
+  diagrams[0].SetMyProbability(1);
   diagrams[0].setColsNumber(1);
   diagrams[0].setCellsInCol(0, 1);
 
@@ -356,53 +358,123 @@ void YungDiagram::CountProbabilities(size_t cellsNumber)
   }
 }
 
-void YungDiagram::SortByProbability()
+void YungDiagramHandler::CountAlphaProbabilities(size_t cellsNumber, double alpha)
+{
+  size_t maxDiagramNumber = YungDiagramHandler::GetMaxNumberWithNCells(cellsNumber)._get_digit(0);
+  levelSize = maxDiagramNumber - YungDiagramHandler::GetMaxNumberWithNCells(cellsNumber - 1)._get_digit(0);
+
+  probabilities = new double[levelSize];
+  numbers = new size_t[levelSize];
+
+  YungDiagram *diagrams = new YungDiagram[maxDiagramNumber + 1];
+  diagrams[0].SetMyProbability(1);
+  diagrams[0].setColsNumber(1);
+  diagrams[0].setCellsInCol(0, 1);
+
+  size_t index = 0;
+  
+  for (size_t i = 0; i < maxDiagramNumber; ++i) 
+  {
+    if (diagrams[i].m_cellsNumber == cellsNumber)
+    {
+      probabilities[index] = diagrams[i].m_probability;
+      numbers[index] = i;
+      index++;
+    }
+
+    diagrams[i].countAncestors();
+    size_t ancestorsNumber = diagrams[i].getAncestorsNumber();
+    size_t *ancestors = diagrams[i].getAncestors();
+
+    double divisor = 0;
+    double *numerator = new double[ancestorsNumber];
+    for (size_t j = 0; j < ancestorsNumber; j++) 
+    {
+      size_t idx = ancestors[j];
+      if (idx > maxDiagramNumber)
+        continue;
+      if (diagrams[idx].m_cellsNumber == 0)
+      {
+        diagrams[idx].m_cellsNumber = diagrams[i].m_cellsNumber + 1;
+        diagrams[idx].m_colsNumber = diagrams[i].m_colsNumber;
+        if (j == ancestorsNumber - 1) // last ancestor always has new columns containing 1 cell
+        {
+          diagrams[idx].m_colsNumber++;
+          diagrams[idx].m_cols = new size_t[diagrams[idx].m_colsNumber];
+          diagrams[idx].m_cols[diagrams[idx].m_colsNumber - 1] = 1;
+        }
+        else 
+          diagrams[idx].m_cols = new size_t[diagrams[idx].m_colsNumber];
+
+        for (size_t k = 0; k < diagrams[i].m_colsNumber; k++)
+        {
+          diagrams[idx].m_cols[k] = diagrams[i].m_cols[k] + (diagrams[i].m_ancestorsColDifferent[j] == k);
+        }
+
+      }
+
+      size_t x = diagrams[i].m_ancestorsColDifferent[j];
+      size_t y = diagrams[idx].m_cols[x];
+      x++;
+      numerator[j] = pow((x * x + y * y), alpha);
+      divisor += numerator[j];
+    }
+
+    for (size_t j = 0; j < ancestorsNumber; j++) 
+    {
+      size_t idx = ancestors[j];
+      if (idx > maxDiagramNumber)
+        continue;
+      diagrams[idx].m_probability += diagrams[i].m_probability * numerator[j] / divisor;
+    }
+    delete[] numerator;
+    delete[] ancestors;
+  }
+}
+
+void YungDiagramHandler::SortByProbability()
 {
   sort(0, levelSize - 1);
 }
 
-void YungDiagram::sort(size_t l, size_t r)
+void YungDiagramHandler::sort(int l, int r)
 {
   if (r <= l)
     return;
-  double mp = probabilities[(r + l) / 2];
-  int mi = (r + l) / 2;
-  int i = l;
-  int j = r;
-  while (i < j)
+
+  double pivot = probabilities[r];
+  int i = l - 1;
+  for (int j = l; j < r; j++)
   {
-    while (probabilities[i] <= mp && i < mi)
-      i++;
-    while (probabilities[j] > mp && j > mi)
-      j--;
-    if (i == j)
-      break;
-
-    double tempProb = probabilities[i];
-    probabilities[i] = probabilities[j];
-    probabilities[j] = tempProb;
-
-    size_t tempInd = numbers[i];
-    numbers[i] = numbers[j];
-    numbers[j] = tempInd;
-    
-    if (i == mi)
-    {
-      mi = j;
-      i++;
-    }
-    else if (j == mi)
-    {
-      mi = i;
-      j--;
-    }
-    else 
+    if (probabilities[j] < pivot)
     {
       i++;
-      j--;
-    }
+      double temp = probabilities[i];
+      probabilities[i] = probabilities[j];
+      probabilities[j] = temp;
 
+      size_t tempInd = numbers[i];
+      numbers[i] = numbers[j];
+      numbers[j] = tempInd;
+    }
   }
-  sort(l, mi - 1);
-  sort(mi + 1, r);
+  double temp = probabilities[i + 1];
+  probabilities[i + 1] = probabilities[r];
+  probabilities[r] = temp;
+  size_t tempInd = numbers[i + 1];
+  numbers[i + 1] = numbers[r];
+  numbers[r] = tempInd;
+
+  sort(l, i);
+  sort(i + 2, r);
+}
+
+void YungDiagramHandler::saveProbabilities(const char *fileName)
+{
+  FILE *f;
+  fopen_s(&f, fileName, "w");
+  for (size_t i = 0; i < levelSize; i++)
+    fprintf(f, "%u %.16lf\n", numbers[i] + 1, probabilities[i]);
+
+  fclose(f);
 }
