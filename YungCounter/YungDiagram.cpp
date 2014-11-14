@@ -10,13 +10,20 @@ size_t *YungDiagramHandler::numbers = 0;
 size_t YungDiagramHandler::levelSize = 0;
 
 YungDiagram::YungDiagram() : m_cellsNumber(0), m_colsNumber(0), m_cols(0), m_numberIsCounted(false), 
-  m_number(0), m_probability(0), m_ancestorsNumber(0), m_ancestors(0), m_ancestorsAreCounted(false)
+  m_number(0), m_probability(0), m_ancestorsNumber(0), m_ancestors(0), m_ancestorsAreCounted(false), m_ancestorsColDifferent(0)
 {
 
 }
 
+YungDiagram::~YungDiagram()
+{
+  delete[] m_ancestors;
+  delete[] m_cols;
+  delete[] m_ancestorsColDifferent;
+}
+
 YungDiagram::YungDiagram(const char *fileName) : m_cellsNumber(0), m_colsNumber(0), m_cols(0), m_numberIsCounted(false), 
-  m_number(0), m_probability(0), m_ancestorsNumber(0), m_ancestors(0)
+  m_number(0), m_probability(0), m_ancestorsNumber(0), m_ancestors(0), m_ancestorsColDifferent(0)
 {
   std::ifstream in(fileName);
   in >> m_cellsNumber;
@@ -35,7 +42,7 @@ YungDiagram::YungDiagram(const char *fileName) : m_cellsNumber(0), m_colsNumber(
 }
 
 YungDiagram::YungDiagram(const boost::xint::integer &number) :  m_cellsNumber(0), m_colsNumber(0), m_cols(0), m_numberIsCounted(true), m_number(0),
-  m_probability(0), m_ancestorsNumber(0), m_ancestors(0)
+  m_probability(0), m_ancestorsNumber(0), m_ancestors(0), m_ancestorsColDifferent(0)
 {
   if (!YungDiagramHandler::isPartitionsAmountCounted())
     YungDiagramHandler::countPartitionsAmount();
@@ -298,138 +305,172 @@ void YungDiagram::setCellsInCol(size_t colIndex, size_t cellsNumber)
   m_cellsNumber += (cellsNumber - prevCellsNumber);
 }
 
+void YungDiagram::resetAncestors()
+{
+  delete[] m_ancestors;
+  delete[] m_ancestorsColDifferent;
+
+  m_ancestors = 0;
+  m_ancestorsColDifferent = 0;
+}
+
 void YungDiagramHandler::CountRichardsonProbabilities(size_t cellsNumber)
 {
-  size_t maxDiagramNumber = YungDiagramHandler::GetMaxNumberWithNCells(cellsNumber)._get_digit(0); // it's number of first diagram with (cellsNumber + 1) cells
-  levelSize = maxDiagramNumber - YungDiagramHandler::GetMaxNumberWithNCells(cellsNumber - 1)._get_digit(0);
-
-  probabilities = new double[levelSize];
-  numbers = new size_t[levelSize];
-
-  YungDiagram *diagrams = new YungDiagram[maxDiagramNumber + 1];
-  diagrams[0].SetMyProbability(1);
-  diagrams[0].setColsNumber(1);
-  diagrams[0].setCellsInCol(0, 1);
+  YungDiagram *currentLevelDiagrams = 0;
+  YungDiagram *nextLevelDiagrams = new YungDiagram[1];
+  nextLevelDiagrams[0].SetMyProbability(1);
+  nextLevelDiagrams[0].setColsNumber(1);
+  nextLevelDiagrams[0].setCellsInCol(0, 1);
 
   size_t index = 0;
-  for (size_t i = 0; i < maxDiagramNumber; ++i) 
+  levelSize = 0;
+  size_t nextLevelSize = 1;
+  size_t firstDiagramOnNextLevel = 0;
+  size_t firstDiagramOnNextNextLevel  = 1;
+  for (size_t level = 1; level < cellsNumber; level++)
   {
-    if (diagrams[i].m_cellsNumber == cellsNumber)
-    {
-      probabilities[index] = diagrams[i].m_probability;
-      numbers[index] = i;
-      index++;
-    }
+    currentLevelDiagrams = nextLevelDiagrams;
+    levelSize = nextLevelSize;
+    firstDiagramOnNextLevel = firstDiagramOnNextNextLevel;
 
-    diagrams[i].countAncestors();
-    size_t ancestorsNumber = diagrams[i].getAncestorsNumber();
-    size_t *ancestors = diagrams[i].getAncestors();
-    long double deltaProb = diagrams[i].m_probability / (long double) ancestorsNumber;
+    firstDiagramOnNextNextLevel = YungDiagramHandler::GetMaxNumberWithNCells(level + 1)._get_digit(0) - 1;
+    nextLevelSize = firstDiagramOnNextNextLevel - firstDiagramOnNextLevel;
+    nextLevelDiagrams = new YungDiagram[nextLevelSize];
 
-    for (size_t j = 0; j < ancestorsNumber; j++) 
+    for (size_t i = 0; i < levelSize; ++i) 
     {
-      size_t idx = ancestors[j];
-      if (idx > maxDiagramNumber)
-        continue;
-      if (diagrams[idx].m_cellsNumber == 0)
+      currentLevelDiagrams[i].countAncestors();
+      size_t ancestorsNumber = currentLevelDiagrams[i].getAncestorsNumber();
+      size_t *ancestors = currentLevelDiagrams[i].getAncestors();
+      long double deltaProb = currentLevelDiagrams[i].m_probability / (long double) ancestorsNumber;
+
+      for (size_t j = 0; j < ancestorsNumber; j++) 
       {
-        diagrams[idx].m_cellsNumber = diagrams[i].m_cellsNumber + 1;
-        diagrams[idx].m_colsNumber = diagrams[i].m_colsNumber;
-        if (j == ancestorsNumber - 1)
+        size_t idx = ancestors[j] - firstDiagramOnNextLevel;
+        if (nextLevelDiagrams[idx].m_cellsNumber == 0)
         {
-          diagrams[idx].m_colsNumber++;
-          diagrams[idx].m_cols = new size_t[diagrams[idx].m_colsNumber];
-          diagrams[idx].m_cols[diagrams[idx].m_colsNumber - 1] = 1;
+          nextLevelDiagrams[idx].m_cellsNumber = currentLevelDiagrams[i].m_cellsNumber + 1;
+          nextLevelDiagrams[idx].m_colsNumber = currentLevelDiagrams[i].m_colsNumber;
+          if (j == ancestorsNumber - 1)
+          {
+            nextLevelDiagrams[idx].m_colsNumber++;
+            nextLevelDiagrams[idx].m_cols = new size_t[nextLevelDiagrams[idx].m_colsNumber];
+            nextLevelDiagrams[idx].m_cols[nextLevelDiagrams[idx].m_colsNumber - 1] = 1;
+          }
+          else 
+            nextLevelDiagrams[idx].m_cols = new size_t[nextLevelDiagrams[idx].m_colsNumber];
+
+          for (size_t k = 0; k < currentLevelDiagrams[i].m_colsNumber; k++)
+          {
+            nextLevelDiagrams[idx].m_cols[k] = currentLevelDiagrams[i].m_cols[k] + (currentLevelDiagrams[i].m_ancestorsColDifferent[j] == k);
+          }
+
+
         }
-        else 
-          diagrams[idx].m_cols = new size_t[diagrams[idx].m_colsNumber];
-
-        for (size_t k = 0; k < diagrams[i].m_colsNumber; k++)
-        {
-          diagrams[idx].m_cols[k] = diagrams[i].m_cols[k] + (diagrams[i].m_ancestorsColDifferent[j] == k);
-        }
-
-
+        nextLevelDiagrams[idx].m_probability += deltaProb;
       }
-      diagrams[idx].m_probability += deltaProb;
+      currentLevelDiagrams[i].resetAncestors();
     }
 
-    delete[] ancestors;
+    delete[] currentLevelDiagrams;
   }
+
+  probabilities = new double[nextLevelSize];
+  numbers = new size_t[nextLevelSize];
+  for (size_t i = 0; i < nextLevelSize; i++)
+  {
+    probabilities[i] = nextLevelDiagrams[i].m_probability;
+    numbers[i] = i + firstDiagramOnNextLevel;
+  }
+
+  delete[] nextLevelDiagrams;
+
+  levelSize = nextLevelSize;
 }
 
 void YungDiagramHandler::CountAlphaProbabilities(size_t cellsNumber, double alpha)
 {
-  size_t maxDiagramNumber = YungDiagramHandler::GetMaxNumberWithNCells(cellsNumber)._get_digit(0);
-  levelSize = maxDiagramNumber - YungDiagramHandler::GetMaxNumberWithNCells(cellsNumber - 1)._get_digit(0);
-
-  probabilities = new double[levelSize];
-  numbers = new size_t[levelSize];
-
-  YungDiagram *diagrams = new YungDiagram[maxDiagramNumber + 1];
-  diagrams[0].SetMyProbability(1);
-  diagrams[0].setColsNumber(1);
-  diagrams[0].setCellsInCol(0, 1);
+  YungDiagram *currentLevelDiagrams = 0;
+  YungDiagram *nextLevelDiagrams = new YungDiagram[1];
+  nextLevelDiagrams[0].SetMyProbability(1);
+  nextLevelDiagrams[0].setColsNumber(1);
+  nextLevelDiagrams[0].setCellsInCol(0, 1);
 
   size_t index = 0;
-  
-  for (size_t i = 0; i < maxDiagramNumber; ++i) 
+  levelSize = 0;
+  size_t nextLevelSize = 1;
+  size_t firstDiagramOnNextLevel = 0;
+  size_t firstDiagramOnNextNextLevel  = 1;
+  for (size_t level = 1; level < cellsNumber; level++)
   {
-    if (diagrams[i].m_cellsNumber == cellsNumber)
-    {
-      probabilities[index] = diagrams[i].m_probability;
-      numbers[index] = i;
-      index++;
-    }
+    currentLevelDiagrams = nextLevelDiagrams;
+    levelSize = nextLevelSize;
+    firstDiagramOnNextLevel = firstDiagramOnNextNextLevel;
 
-    diagrams[i].countAncestors();
-    size_t ancestorsNumber = diagrams[i].getAncestorsNumber();
-    size_t *ancestors = diagrams[i].getAncestors();
+    firstDiagramOnNextNextLevel = YungDiagramHandler::GetMaxNumberWithNCells(level + 1)._get_digit(0) - 1;
+    nextLevelSize = firstDiagramOnNextNextLevel - firstDiagramOnNextLevel;
+    nextLevelDiagrams = new YungDiagram[nextLevelSize];
 
-    double divisor = 0;
-    double *numerator = new double[ancestorsNumber];
-    for (size_t j = 0; j < ancestorsNumber; j++) 
+    for (size_t i = 0; i < levelSize; ++i) 
     {
-      size_t idx = ancestors[j];
-      if (idx > maxDiagramNumber)
-        continue;
-      if (diagrams[idx].m_cellsNumber == 0)
+      currentLevelDiagrams[i].countAncestors();
+      size_t ancestorsNumber = currentLevelDiagrams[i].getAncestorsNumber();
+      size_t *ancestors = currentLevelDiagrams[i].getAncestors();
+
+      double divisor = 0;
+      double *numerator = new double[ancestorsNumber];
+      for (size_t j = 0; j < ancestorsNumber; j++) 
       {
-        diagrams[idx].m_cellsNumber = diagrams[i].m_cellsNumber + 1;
-        diagrams[idx].m_colsNumber = diagrams[i].m_colsNumber;
-        if (j == ancestorsNumber - 1) // last ancestor always has new columns containing 1 cell
+        size_t idx = ancestors[j] - firstDiagramOnNextLevel;
+        if (nextLevelDiagrams[idx].m_cellsNumber == 0)
         {
-          diagrams[idx].m_colsNumber++;
-          diagrams[idx].m_cols = new size_t[diagrams[idx].m_colsNumber];
-          diagrams[idx].m_cols[diagrams[idx].m_colsNumber - 1] = 1;
-        }
-        else 
-          diagrams[idx].m_cols = new size_t[diagrams[idx].m_colsNumber];
+          nextLevelDiagrams[idx].m_cellsNumber = currentLevelDiagrams[i].m_cellsNumber + 1;
+          nextLevelDiagrams[idx].m_colsNumber = currentLevelDiagrams[i].m_colsNumber;
+          if (j == ancestorsNumber - 1) // last ancestor always has new columns containing 1 cell
+          {
+            nextLevelDiagrams[idx].m_colsNumber++;
+            nextLevelDiagrams[idx].m_cols = new size_t[nextLevelDiagrams[idx].m_colsNumber];
+            nextLevelDiagrams[idx].m_cols[nextLevelDiagrams[idx].m_colsNumber - 1] = 1;
+          }
+          else 
+            nextLevelDiagrams[idx].m_cols = new size_t[nextLevelDiagrams[idx].m_colsNumber];
 
-        for (size_t k = 0; k < diagrams[i].m_colsNumber; k++)
-        {
-          diagrams[idx].m_cols[k] = diagrams[i].m_cols[k] + (diagrams[i].m_ancestorsColDifferent[j] == k);
+          for (size_t k = 0; k < currentLevelDiagrams[i].m_colsNumber; k++)
+          {
+            nextLevelDiagrams[idx].m_cols[k] = currentLevelDiagrams[i].m_cols[k] + (currentLevelDiagrams[i].m_ancestorsColDifferent[j] == k);
+          }
+
         }
 
+        size_t x = currentLevelDiagrams[i].m_ancestorsColDifferent[j];
+        size_t y = nextLevelDiagrams[idx].m_cols[x];
+        x++;
+        numerator[j] = pow((x * x + y * y), alpha);
+        divisor += numerator[j];
       }
 
-      size_t x = diagrams[i].m_ancestorsColDifferent[j];
-      size_t y = diagrams[idx].m_cols[x];
-      x++;
-      numerator[j] = pow((x * x + y * y), alpha);
-      divisor += numerator[j];
+      for (size_t j = 0; j < ancestorsNumber; j++) 
+      {
+        size_t idx = ancestors[j] - firstDiagramOnNextLevel;
+        nextLevelDiagrams[idx].m_probability += currentLevelDiagrams[i].m_probability * numerator[j] / divisor;
+      }
+      delete[] numerator;
+      currentLevelDiagrams[i].resetAncestors();
     }
-
-    for (size_t j = 0; j < ancestorsNumber; j++) 
-    {
-      size_t idx = ancestors[j];
-      if (idx > maxDiagramNumber)
-        continue;
-      diagrams[idx].m_probability += diagrams[i].m_probability * numerator[j] / divisor;
-    }
-    delete[] numerator;
-    delete[] ancestors;
+    delete[] currentLevelDiagrams;
   }
+
+  probabilities = new double[nextLevelSize];
+  numbers = new size_t[nextLevelSize];
+  for (size_t i = 0; i < nextLevelSize; i++)
+  {
+    probabilities[i] = nextLevelDiagrams[i].m_probability;
+    numbers[i] = i + firstDiagramOnNextLevel;
+  }
+
+  delete[] nextLevelDiagrams;
+
+  levelSize = nextLevelSize;
 }
 
 void YungDiagramHandler::SortByProbability()

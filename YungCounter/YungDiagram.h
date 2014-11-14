@@ -7,11 +7,13 @@ public:
   YungDiagram();
   YungDiagram(const char *fileName);
   YungDiagram(const boost::xint::integer &number);
+  ~YungDiagram();
   void SaveToFile(const char *fileName) const;
   boost::xint::integer GetDiagramNumber() const;
   double GetMyProbabilityRichardson();
   void SetMyProbability(long double probability) { m_probability = probability; }
   void countAncestors();
+  void resetAncestors();
 
   size_t getAncestorsNumber() { return m_ancestorsNumber; };
   size_t *getAncestors() {return m_ancestors; }

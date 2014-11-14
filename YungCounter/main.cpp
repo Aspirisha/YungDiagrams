@@ -16,8 +16,9 @@ int main(void)
   YungDiagram d2(0xFFFFFFFFU);
   d2.SaveToFile("Max_diagram_with_unsigned_number.txt");
 
-  ProcessType procType = ALPHA;
-  size_t cellsNumber = 4;
+  ProcessType procType = RICHARDSON;
+  size_t cellsNumber = 70;
+  double alpha = 0.3;
   const char *fileName = 0;
 
   switch (procType)
@@ -27,7 +28,7 @@ int main(void)
     fileName = "probs_richardson.txt";
     break;
   case ALPHA:
-    YungDiagramHandler::CountAlphaProbabilities(cellsNumber, -0.3);
+    YungDiagramHandler::CountAlphaProbabilities(cellsNumber, alpha);
     fileName = "probs_alpha.txt";
     break;
   }
