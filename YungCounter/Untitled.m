@@ -9,3 +9,25 @@ title('Probability distribution with different processes over 70 cell Yung diagr
 legend('Alpha = 0.3', 'Richardson');
 set(gcf, 'InvertHardCopy', 'off');
 saveas(gcf, 'probs.jpg');
+
+figure;
+C = load('Freqs_400_1000buckets_alpha.txt');
+C = sort(C);
+x = 1: 1: size(C);
+bar(x, C, 'b');
+title('Frequencies for 1000 diagram buckets for diagrams with 400 cells.');
+legend('Alpha = 0.16');
+set(gcf, 'InvertHardCopy', 'off');
+saveas(gcf, 'Freqs_400_1000buckets_alpha.jpg');
+grid on;
+
+figure;
+C = load('Freqs_400_1000buckets_richardson.txt');
+C = sort(C);
+x = 1: 1: size(C);
+bar(x, C, 'b');
+title('Frequencies for 1000 diagram buckets for diagrams with 400 cells.');
+legend('Richardson');
+set(gcf, 'InvertHardCopy', 'off');
+saveas(gcf, 'Freqs_400_1000buckets_richardson.jpg');
+grid on;
