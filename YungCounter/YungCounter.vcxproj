@@ -44,6 +44,7 @@
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <SDLCheck>true</SDLCheck>
+      <PreprocessorDefinitions>_SCL_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
@@ -64,11 +65,17 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="ioInterface.cpp" />
+    <ClCompile Include="LinearProblemSolver.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="YungDiagram.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="globaldefinitions.h" />
+    <ClInclude Include="ioInterface.h" />
+    <ClInclude Include="LinearProblemSolver.h" />
     <ClInclude Include="YungDiagram.h" />
+    <ClInclude Include="YungDiagram3D.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

@@ -4,7 +4,10 @@
 enum ProcessType 
 {
   RICHARDSON,
-  ALPHA
+  ALPHA,
+  BETA,
+  PLANSHEREL,
+  PLANSHEREL_POWERED_GAMMA
 };
 
 class YungDiagram
@@ -31,7 +34,7 @@ public:
 
   bool addCell(size_t col);
   long double m_probability; // to boost up it's public
-private:  
+//private:  
   friend class YungDiagramHandler;
 
   size_t *m_ancestors; // numbers of ancestors diagrams
@@ -49,8 +52,9 @@ class YungDiagramHandler
 {
 public:
   static boost::xint::integer GetMaxNumberWithNCells(size_t n);
-  static void CountRichardsonProbabilities(size_t cellsNumber);
-  static void CountAlphaProbabilities(size_t cellsNumber);
+  static void CountProbabilities(ProcessType processType, size_t cellsNumber);
+  static void PrintPartitionsAmount(const std::string &fileName);
+
   static void SortByProbability();
   static size_t GetSmallDiagramNumber(size_t cellsNumber, const std::vector<size_t> &cols, bool withExtraCell = false);
   static bool isPartitionsAmountCounted() { return partitionsAmount != 0;}
@@ -63,9 +67,14 @@ public:
 
   static YungDiagram *getRandomDiagram(ProcessType procType, size_t n);
 
-  static std::vector<size_t> getRandomWalkFrequencies(ProcessType processType, size_t cellsNumber, size_t bucketsNumber, size_t testsNumber);
+  static std::vector<size_t> getRandomWalkFrequencies(ProcessType processType, size_t cellsNumber, size_t bucketsNumber, size_t testsNumber, bool needPermutation = false);
   static void setAlpha(double alpha) { s_alpha = alpha; }
   static size_t getMaxCellsNumber() { return maxCellsNumber; }
+
+  static void saveColumnsToFile(const char* fileName, YungDiagram *d);
+
+  static double countKantorovichDistance(YungDiagram &d1, YungDiagram &d2);
+
 private:
   static void sort(int l, int r); // sorts array probabilities and numbers
   
@@ -78,4 +87,5 @@ private:
   static size_t *numbers;
   static double *probabilities;
   static double s_alpha;
+  static double s_gamma;
 };
