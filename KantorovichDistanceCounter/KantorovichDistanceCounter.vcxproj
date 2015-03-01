@@ -11,8 +11,8 @@
     </ProjectConfiguration>
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectGuid>{D14439A4-E1DA-4998-A495-17B5D8C6CE62}</ProjectGuid>
-    <RootNamespace>YungCounter</RootNamespace>
+    <ProjectGuid>{5804BCD5-68E4-44D7-AA8A-6E824CB1FBA7}</ProjectGuid>
+    <RootNamespace>KantorovichDistanceCounter</RootNamespace>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
@@ -44,7 +44,7 @@
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>_SCL_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_SCL_SECURE_NO_WARNINGS;_MBCS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
@@ -65,19 +65,14 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="gaussolver.cpp" />
-    <ClCompile Include="ioInterface.cpp" />
-    <ClCompile Include="LinearProblemSolver.cpp" />
+    <ClCompile Include="..\YungCounter\ioInterface.cpp" />
+    <ClCompile Include="..\YungCounter\LinearProblemSolver.cpp" />
+    <ClCompile Include="DistanceObSimplexCounter.cpp" />
     <ClCompile Include="main.cpp" />
-    <ClCompile Include="YungDiagram.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="gaussolver.h" />
-    <ClInclude Include="globaldefinitions.h" />
-    <ClInclude Include="ioInterface.h" />
-    <ClInclude Include="LinearProblemSolver.h" />
-    <ClInclude Include="YungDiagram.h" />
-    <ClInclude Include="YungDiagram3D.h" />
+    <ClInclude Include="..\YungCounter\LinearProblemSolver.h" />
+    <ClInclude Include="DistanceOnSimplexCounter.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

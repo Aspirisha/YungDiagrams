@@ -15,39 +15,24 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="DistanceObSimplexCounter.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="main.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="YungDiagram.cpp">
+    <ClCompile Include="..\YungCounter\LinearProblemSolver.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="LinearProblemSolver.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="ioInterface.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="gaussolver.cpp">
+    <ClCompile Include="..\YungCounter\ioInterface.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="YungDiagram.h">
+    <ClInclude Include="DistanceOnSimplexCounter.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="YungDiagram3D.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="LinearProblemSolver.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="globaldefinitions.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="ioInterface.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="gaussolver.h">
+    <ClInclude Include="..\YungCounter\LinearProblemSolver.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

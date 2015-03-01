@@ -49,19 +49,19 @@ bool solveTransportationPotential(dMatrix const &C, dVector const &a, dVector co
   {
     dVector u(m);
     dVector v(n);
-    countPotentials(C, basisPoints, u, v);
+    countPotentials(C, basisPoints, u, v); // I think O(mn)
 
     __DUMP__VARIABLE__(u, "u");
     __DUMP__VARIABLE__(v, "v");
     __DUMP__VARIABLE__(optX, "optX");
     dMatrix delta;
-    countFreePointsMarks(C, u, v, basisPoints, delta);
+    countFreePointsMarks(C, u, v, basisPoints, delta); // O(mn)
     __DUMP__VARIABLE__(delta, "delta");
     bool allNegative = true;
     point_t maxFreePoint;
     double maxPosDelta = -1e307;
 
-    for (int i = 0; i < m; i++)
+    for (int i = 0; i < m; i++) // O(mn)
     {
       for (int j = 0; j < n; j++)
       {
@@ -81,7 +81,7 @@ bool solveTransportationPotential(dMatrix const &C, dVector const &a, dVector co
       break;
 
     std::deque<point_t> q;
-    buildCycle(basisPoints, maxFreePoint, m, n, q);
+    buildCycle(basisPoints, maxFreePoint, m, n, q); // < O((mn)^2)
     double lambda = 1e307;
     point_t pointToExclude;
     for (int i = 1; i < q.size(); i += 2)
@@ -125,25 +125,17 @@ void NorthWestCornerMethod(dMatrix const &C, dVector const &a, dVector const &b,
   int x = 0; // current point
   int y = 0;
   int ind = 0;
-  while (restProduct > machine_zero) // manage machine 0
+  while (ind < m + n - 1) // manage machine 0
   {
-    if (rest_a(y) < machine_zero && rest_b(x) >= machine_zero)
+    basisPoints[ind].x = x;
+    basisPoints[ind].y = y;
+    ind++;
+    optX(y, x) = 0;
+    
+    if (rest_a(y) < machine_zero && y < m - 1)
       y++;
-    else if (rest_b(x) < machine_zero && rest_a(y) >= machine_zero)
+    else if (rest_b(x) < machine_zero && x < n - 1)
       x++;
-    else if (rest_b(x) < machine_zero && rest_a(y) < machine_zero) // degenerate point
-    {
-      x++;
-      
-      if (C(x, y) == 1e307)
-
-        continue;
-
-      basisPoints[ind].x = x;
-      basisPoints[ind].y = y;
-      y++;
-      ind++;
-    }
     else
     {
       double d = std::min(rest_a(y), rest_b(x));
@@ -151,9 +143,11 @@ void NorthWestCornerMethod(dMatrix const &C, dVector const &a, dVector const &b,
       rest_b(x) -= d;
       restProduct -= d;
       optX(y, x) = d;
-      basisPoints[ind].x = x;
-      basisPoints[ind].y = y;
-      ind++;
+
+      if (rest_a(y) < machine_zero && y < m - 1)
+        y++;
+      else
+        x++;
     }
   }
 }
@@ -171,9 +165,15 @@ void countPotentials(dMatrix const &C, std::vector<point_t> &basisPoints, dVecto
   qu.push_back(0);
   def_u[0] = 1;
   for (int i = 1; i < m; i++)
+  {
     def_u[i] = 0;
+    u(i) = 0;
+  }
   for (int i = 0; i < n; i++)
+  {
     def_v[i] = 0;
+    v(i) = 0;
+  }
 
   while (!qu.empty() || !qv.empty())
   {
@@ -230,7 +230,7 @@ void countFreePointsMarks(dMatrix const &C, dVector const &u, dVector const &v, 
 void buildCycle(std::vector<point_t> const &basisPoints, point_t start, int m, int n,  std::deque<point_t> &q)
 {
   matrix<char> A(m, n);
-  for (int i = 0; i < m; i++)
+  for (int i = 0; i < m; i++) // O(mn)
     for (int j = 0; j < n; j++)
       A(i, j) = '0';
   matrix<char> cycleMatrix;

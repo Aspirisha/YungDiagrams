@@ -1,9 +1,179 @@
 #include <iostream>
 #include <boost\xint\xint.hpp>
+#include <random>
+#include <chrono>
 #include "YungDiagram.h"
 
 using namespace std;
 #define _CRT_SECURE_NO_WARNINGS
+
+void countDistanceBetweenInputDiagrams() 
+{
+  size_t n1, n2;
+  cout << "Insert numbers of diagrams to find distance between: \n";
+  cout << "Diagram 1: ";
+  cin >> n1;
+  cout << "Diagram 2: ";
+  cin >> n2;
+
+  double dist = YungDiagramHandler::countKantorovichDistance(n1, n2);
+  cout  << "dist(" << n1 << ", " << n2 << ") = "<< dist << endl;
+}
+
+void countAllDistancesOnLevel(size_t level, const char *fileName)
+{
+  size_t n1 = YungDiagramHandler::GetFirstNumberWithNPlusOneCells(level - 1)._get_digit(0) - 1;
+  size_t n2 = YungDiagramHandler::GetFirstNumberWithNPlusOneCells(level)._get_digit(0) - 1;
+
+ // n1++;
+ // n2--;
+  ofstream out(fileName);
+  out.precision(15);
+  for (int i = n1 + 1; i <= n2; i++)
+  {
+    for (int j = n1 + 1; j <= n2; j++)
+    {
+      out << fixed << YungDiagramHandler::countKantorovichDistance(i, j) << " ";
+    }
+    out << endl;
+  }
+  out.close();
+}
+
+void countDistanceBetweenRandomDiagrams(ProcessType type, size_t cellsNum)
+{
+  YungDiagram *d1 = YungDiagramHandler::getRandomDiagram(type, cellsNum);
+  YungDiagram *d2 = YungDiagramHandler::getRandomDiagram(type, cellsNum);
+  YungDiagram *d3 = YungDiagramHandler::getRandomDiagram(type, cellsNum);
+
+  cout << "Random numbers are: " << d1->GetDiagramNumber() << ", " << d2->GetDiagramNumber() << ", " << d3->GetDiagramNumber()  << endl;
+  //size_t n = YungDiagramHandler::GetSmallDiagramNumber(3, 5, 3, 2);
+  double dist1 = YungDiagramHandler::countKantorovichDistance(*d1, *d2);
+  double dist2 = YungDiagramHandler::countKantorovichDistance(*d1, *d3);
+  double dist3 = YungDiagramHandler::countKantorovichDistance(*d3, *d2);
+  //  double dist = YungDiagramHandler::countKantorovichDistance(2400, 2501);
+  cout.precision(15);
+  cout  << "dist(" << d1->GetDiagramNumber() << ", " << d2->GetDiagramNumber() << ") = "<< fixed << dist1 << endl;
+  cout  << "dist(" << d1->GetDiagramNumber() << ", " << d3->GetDiagramNumber() << ") = "<< fixed << dist2 << endl;
+  cout  << "dist(" << d2->GetDiagramNumber() << ", " << d3->GetDiagramNumber() << ") = "<< fixed << dist3 << endl;
+
+  cout  << "dist(" << d1->GetDiagramNumber() << ", " << d2->GetDiagramNumber() << ")  + " 
+    << "dist(" << d1->GetDiagramNumber() << ", " << d3->GetDiagramNumber() << ") = " << fixed << dist1 + dist2 << endl;
+  cout  << "dist(" << d1->GetDiagramNumber() << ", " << d2->GetDiagramNumber() << ")  + " 
+    << "dist(" << d2->GetDiagramNumber() << ", " << d3->GetDiagramNumber() << ") = " << fixed << dist1 + dist3 << endl;
+  cout  << "dist(" << d2->GetDiagramNumber() << ", " << d3->GetDiagramNumber() << ")  + " 
+    << "dist(" << d1->GetDiagramNumber() << ", " << d3->GetDiagramNumber() << ") = " << fixed << dist2 + dist3 << endl;
+}
+
+size_t getSmallUniformlyRandomDiagram(size_t cellsNum)
+{
+  size_t seed = (size_t)std::chrono::system_clock::now().time_since_epoch().count();
+  std::default_random_engine generator(seed);
+  size_t n1 = YungDiagramHandler::GetFirstNumberWithNCells(cellsNum)._get_digit(0);
+  size_t n2 = YungDiagramHandler::GetLastNumberWithNCells(cellsNum)._get_digit(0);
+  std::uniform_int_distribution<int> distribution(n1, n2);
+  size_t d1 = distribution(generator);
+
+  return d1;
+}
+
+void countDistanceBetweenUniformlyRandomDiagrams()
+{
+  size_t cellsNum;
+  cout << "Insert number of cells in rndom diagrams to find distance between: \n";
+  cin >> cellsNum;
+  size_t seed = (size_t)std::chrono::system_clock::now().time_since_epoch().count();
+  std::default_random_engine generator(seed);
+
+  size_t n1 = YungDiagramHandler::GetFirstNumberWithNCells(cellsNum)._get_digit(0);
+  size_t n2 = YungDiagramHandler::GetLastNumberWithNCells(cellsNum)._get_digit(0);
+
+  std::uniform_int_distribution<int> distribution(n1, n2);
+  size_t d1 = distribution(generator);
+  size_t d2 = distribution(generator);
+
+  cout << "Random numbers are: " << d1 << ", " << d2 << endl;
+  cout.precision(15);
+
+  YungDiagramHandler::printSmallDiagramsPair(d1, d2);
+  double dist = YungDiagramHandler::countKantorovichDistance(d1, d2);
+  cout  << "dist(" << d1 << ", " << d2 << ") = "<< fixed << dist << endl;
+}
+
+void writeKantorovichBallToFile(const char *fileName)
+{
+  size_t cellsNum;
+  double r;
+
+  cout << "Count Kantorovich ball.\n";
+  cout << "Cells number: ";
+  cin >> cellsNum;
+  cout << "radius: ";
+  cin >> r;
+
+  vector<double> ballDists;
+  vector<size_t> ballDiagrams;
+
+  YungDiagramHandler::getBall(getSmallUniformlyRandomDiagram(cellsNum), r, ballDiagrams, ballDists);
+
+  ofstream out(fileName);
+  for (size_t i = 0; i < ballDists.size(); i++)
+  {
+    out << ballDiagrams[i] << " " << ballDists[i] << endl;
+  }
+
+}
+
+void printDiagramsInCycle()
+{
+  cout << "Insert diagrams numbers to print until you're done. To exit insert 0.\n";
+
+  size_t num = 0;
+  while (true)
+  {
+    cout << "Diagram number: ";
+    cin >> num;
+
+    if (num == 0)
+      break;
+
+    YungDiagramHandler::printSmallDiagram(num);
+    YungDiagram d(num);
+    cout << "Columns: \n";
+    for (size_t i = 0; i < d.m_cols.size(); i++)
+      cout << d.m_cols[i] << " ";
+    cout << endl;
+  }
+}
+
+void writeKantorovichEstimationCoefs(const char *fileName)
+{
+  cout << "Estimation for Kantorovich distance.\n";
+  cout << "Cells number for random diagram: ";
+  size_t cellsNum;
+  cin >> cellsNum;
+  YungDiagram d(getSmallUniformlyRandomDiagram(cellsNum));
+
+  vector<double> c;
+  vector<vector<size_t> > deltas;
+  YungDiagramHandler::getLinearCoefficientsEstimationKantorovich(d.GetDiagramNumber()._get_digit(0), c, deltas);
+
+  ofstream out(fileName);
+  for (size_t i = 0; i < c.size(); i++)
+    out << c[i] << " ";
+  out << endl;
+  out << endl;
+
+  for (size_t i = 0; i < deltas.size(); i++)
+  {
+    for (size_t j = 0; j < cellsNum; j++)
+    {
+      out << deltas[i][j] << " ";
+    }
+    out << endl;
+  }
+
+}
 
 int main(void)
 {
@@ -12,7 +182,7 @@ int main(void)
 
   ProcessType procType = BETA;
   size_t cellsNumber = 50;
-  double alpha = 0.16;
+  double alpha = -0.16;
   const char *fileName = 0;
   YungDiagramHandler::setAlpha(alpha);
 
@@ -49,17 +219,18 @@ int main(void)
 
   //**********************asymptotic*******************************/
   //YungDiagramHandler::PrintPartitionsAmount("PartitionsAmount.txt");
-  //YungDiagram *d = YungDiagramHandler::getRandomDiagram(PLANSHEREL_POWERED_GAMMA, 100000);
-  //YungDiagramHandler::saveColumnsToFile("100000Cells_PLANSHEREL_GAMMA.txt", d);
+  //YungDiagram *d = YungDiagramHandler::getRandomDiagram(ALPHA, 1000000);
+  //YungDiagramHandler::saveColumnsToFile("1000000Cells_ALPHA.txt", d);
 
   /*************************Kantorovich distance*************************/
-  YungDiagram d1(75);
-  YungDiagram d2(76);
 
-  double dist = YungDiagramHandler::countKantorovichDistance(d1, d2);
-  cout  << "dist(4, 5) = " << dist << endl;
-
-
+  //countDistanceBetweenInputDiagrams();
+  //countDistanceBetweenRandomDiagrams(RICHARDSON, 10);
+  //countAllDistancesOnLevel(10, "distances.txt");
+  //countDistanceBetweenUniformlyRandomDiagrams();
+  //writeKantorovichBallToFile("AllDistances20.txt");
+  //printDiagramsInCycle();
+  writeKantorovichEstimationCoefs("EstimationCoefs.txt");
   int dummy = 0;
 
 

@@ -6,12 +6,12 @@
 #include <string>
 #include <map>
 #include <set>
+#include <algorithm>
+#include "gaussolver.h"
 #include "YungDiagram.h"
 #include "LinearProblemSolver.h"
 
 using namespace std;
-
-typedef pair<size_t, size_t> num_pair;
 
 boost::xint::integer *YungDiagramHandler::partitionsAmount = 0;
 long long *YungDiagramHandler::offsets = 0;
@@ -19,7 +19,7 @@ double *YungDiagramHandler::probabilities = 0;
 size_t *YungDiagramHandler::numbers = 0;
 size_t YungDiagramHandler::levelSize = 0;
 const int YungDiagramHandler::maxCellsNumber = 600;
-double YungDiagramHandler::s_alpha = 0.3;
+double YungDiagramHandler::s_alpha = 0.16;
 double YungDiagramHandler::s_gamma = -0.5;
 
 YungDiagram::YungDiagram() : m_cellsNumber(1), m_numberIsCounted(true), 
@@ -93,6 +93,7 @@ YungDiagram::YungDiagram(const boost::xint::integer &number) :  m_cellsNumber(0)
     {
       m_cols.push_back(colSize);
       n -= colSize;
+      colSize = min(n, colSize);
     }
   }
 
@@ -271,7 +272,7 @@ size_t YungDiagramHandler::GetSmallDiagramNumber(size_t cellsNumber, const vecto
 }
 
 /// returns number of first Digram with (n + 1) cell
-boost::xint::integer YungDiagramHandler::GetMaxNumberWithNCells(size_t n)
+boost::xint::integer YungDiagramHandler::GetFirstNumberWithNPlusOneCells(size_t n)
 {
   if (n >= maxCellsNumber)
   {
@@ -280,9 +281,11 @@ boost::xint::integer YungDiagramHandler::GetMaxNumberWithNCells(size_t n)
   }
 
   YungDiagram d;
-  d.setColsNumber(n + 1);
+  d.m_cols.resize(n + 1);
+  d.m_cellsNumber = n + 1;
   for (size_t i = 0; i < n + 1; i++)
-    d.setCellsInCol(i, 1);
+    d.m_cols[i] = 1;
+  d.m_numberIsCounted = false;
   return d.GetDiagramNumber();
 }
 
@@ -350,8 +353,6 @@ void YungDiagramHandler::CountProbabilities(ProcessType processType, size_t cell
   YungDiagram *currentLevelDiagrams = 0;
   YungDiagram *nextLevelDiagrams = new YungDiagram[1];
   nextLevelDiagrams[0].SetMyProbability(1);
-  nextLevelDiagrams[0].setColsNumber(1);
-  nextLevelDiagrams[0].setCellsInCol(0, 1);
 
   size_t index = 0;
   levelSize = 0;
@@ -365,7 +366,7 @@ void YungDiagramHandler::CountProbabilities(ProcessType processType, size_t cell
     levelSize = nextLevelSize;
     firstDiagramOnNextLevel = firstDiagramOnNextNextLevel;
 
-    firstDiagramOnNextNextLevel = YungDiagramHandler::GetMaxNumberWithNCells(level + 1)._get_digit(0);
+    firstDiagramOnNextNextLevel = YungDiagramHandler::GetFirstNumberWithNPlusOneCells(level + 1)._get_digit(0);
     nextLevelSize = firstDiagramOnNextNextLevel - firstDiagramOnNextLevel;
     nextLevelDiagrams = new YungDiagram[nextLevelSize];
 
@@ -380,7 +381,7 @@ void YungDiagramHandler::CountProbabilities(ProcessType processType, size_t cell
       for (size_t j = 0; j < ancestorsNumber; j++) 
       {
         size_t idx = ancestors[j] - firstDiagramOnNextLevel;
-        if (nextLevelDiagrams[idx].m_cellsNumber == 0)
+        if (nextLevelDiagrams[idx].m_cellsNumber == 1) // initialize it if it isn't yet
         {
           nextLevelDiagrams[idx].m_cellsNumber = currentLevelDiagrams[i].m_cellsNumber + 1;
           nextLevelDiagrams[idx].m_cols = currentLevelDiagrams[i].m_cols;
@@ -504,8 +505,8 @@ size_t YungDiagram::getAncestorsNumber()
 YungDiagram *YungDiagramHandler::getRandomDiagram(ProcessType procType, size_t n)
 {
   YungDiagram *currentDiagram = new YungDiagram();
-  unsigned seed = (size_t)std::chrono::system_clock::now().time_since_epoch().count();
-  std::default_random_engine generator(seed);
+  static unsigned seed = (size_t)std::chrono::system_clock::now().time_since_epoch().count();
+  static std::default_random_engine generator(seed);
 
   double curProb = 1.0;
 
@@ -584,7 +585,7 @@ YungDiagram *YungDiagramHandler::getRandomDiagram(ProcessType procType, size_t n
       probs.push_back(pow((x * x + 1), s_alpha));
       size_t j = 0;
       std::discrete_distribution<size_t> distrib(probs.size(), 0, ancestorsNumber - 1,
-          [&probs, &j](float){
+          [&probs, &j](double){
           auto w = probs[j];
           ++j;
           return w;
@@ -629,12 +630,12 @@ YungDiagram *YungDiagramHandler::getRandomDiagram(ProcessType procType, size_t n
           width++;
         }
         
-        newProb *= (newProb * (i + 1));
+        newProb *= (i + 1); // here in fact we don't need *(i + 1) for it's the same for all ancestors
         probs.push_back(newProb);
       }
       size_t j = 0;
       std::discrete_distribution<size_t> distrib(probs.size(), 0, ancestorsNumber - 1,
-          [&probs, &j](float){
+          [&probs, &j](double){
           auto w = probs[j];
           ++j;
           return w;
@@ -704,8 +705,8 @@ YungDiagram *YungDiagramHandler::getRandomDiagram(ProcessType procType, size_t n
 vector<size_t> YungDiagramHandler::getRandomWalkFrequencies(ProcessType processType, size_t cellsNumber, size_t bucketsNumber, size_t testsNumber, bool needPermutation)
 {
   boost::xint::integer *leftBounds = new boost::xint::integer[bucketsNumber];
-  boost::xint::integer maxNumberPlusOne = YungDiagramHandler::GetMaxNumberWithNCells(cellsNumber);
-  boost::xint::integer minNumber = YungDiagramHandler::GetMaxNumberWithNCells(cellsNumber - 1);
+  boost::xint::integer maxNumberPlusOne = YungDiagramHandler::GetFirstNumberWithNPlusOneCells(cellsNumber);
+  boost::xint::integer minNumber = YungDiagramHandler::GetFirstNumberWithNPlusOneCells(cellsNumber - 1);
   
   leftBounds[0] = minNumber;
   boost::xint::integer intervalSize = (maxNumberPlusOne - minNumber) / bucketsNumber; // may be problems with division: last bucket may become very samll (down to 1 diagram)
@@ -826,35 +827,35 @@ void YungDiagramHandler::saveColumnsToFile(const char* fileName, YungDiagram *d)
   out.close();
 }
 
-static void countCoefficientsForKantorovichMetric(size_t diagramNumber, dVector &coefficients, vector<size_t> &predecessorsNums)
+void YungDiagramHandler::countCoefficientsForKantorovichMetric(size_t diagramNumber, dVector &coefficients, vector<size_t> &predecessorsNums)
 {
-  YungDiagram d2(diagramNumber);
-  size_t colsNumber2 = d2.m_cols.size();
+  YungDiagram d(diagramNumber);
+  size_t colsNumber = d.m_cols.size();
 
   vector<double> a; // c[i] = a[i] / sum(a)
   double sum_coefs = 0;
-  coefficients.resize(colsNumber2);
+  coefficients.resize(colsNumber);
 
   size_t coefsIndex = 0;
-  for (int s = 0; s < colsNumber2; s++)
+  for (int s = 0; s < colsNumber; s++)
   {
     bool cellCanBeRemoved = true;
 
-    if (s != colsNumber2 - 1)
+    if (s != colsNumber - 1)
     {
-      if (d2.m_cols[s] == d2.m_cols[s + 1])
+      if (d.m_cols[s] == d.m_cols[s + 1])
         cellCanBeRemoved = false;
     }
 
     if (cellCanBeRemoved)
     {
       size_t x = s + 1;
-      size_t y = d2.m_cols[s];
+      size_t y = d.m_cols[s];
 
       double c = 1.0;
       size_t height = 1;
       size_t width = 0;
-      size_t rightColWithHeightCells = colsNumber2 - 1;
+      size_t rightColWithHeightCells = colsNumber - 1;
           
       for (size_t l = y; l > 0; l--) // we go up by y, so k = height(x) in the beginning and then it goes down till 1; 
       {
@@ -864,13 +865,13 @@ static void countCoefficientsForKantorovichMetric(size_t diagramNumber, dVector 
           c *= (l + dx);
           c /= (l + dx - 1);
           height++;
-          while (d2.m_cols[rightColWithHeightCells] < height)
+          while (d.m_cols[rightColWithHeightCells] < height)
             rightColWithHeightCells--;
         }
       }
       for (size_t l = x; l > 1; l--)
       {
-        int dy = d2.m_cols[width] - y;
+        int dy = d.m_cols[width] - y;
         if (l + dy - 1)
         {
           c *= (l + dy);
@@ -883,18 +884,18 @@ static void countCoefficientsForKantorovichMetric(size_t diagramNumber, dVector 
       sum_coefs += c;
       coefficients(coefsIndex++) = c;
 
-      d2.m_cols[s]--;
+      d.m_cols[s]--;
       bool needResize = false;
-      if (d2.m_cols[s] == 0)
+      if (d.m_cols[s] == 0)
       {
-        d2.m_cols.resize(d2.m_cols.size() - 1);
+        d.m_cols.resize(d.m_cols.size() - 1);
         needResize = true;
       }
-      predecessorsNums.push_back(YungDiagramHandler::GetSmallDiagramNumber(d2.m_cellsNumber - 1, d2.m_cols));
+      predecessorsNums.push_back(YungDiagramHandler::GetSmallDiagramNumber(d.m_cellsNumber - 1, d.m_cols));
 
       if (needResize)
-        d2.m_cols.push_back(0);
-      d2.m_cols[s]++;
+        d.m_cols.push_back(0);
+      d.m_cols[s]++;
     }
   }
 
@@ -907,20 +908,27 @@ static void countCoefficientsForKantorovichMetric(size_t diagramNumber, dVector 
 double YungDiagramHandler::countKantorovichDistance(YungDiagram &d1, YungDiagram &d2)
 {
   vector<size_t> neededDiagrams;
-  vector<size_t> startsOfLevels;
-  vector<size_t> endsOfLevels;
+  vector<size_t> numbersOfNeededDiagramsOnLevel;
+  vector<char> ancestorFlags; 
+  // probably we don't need to count distance between diagrams that are predecessors of the same diagram from
+  // te top level. If it's predecessor of first one, it has first bit to be 1, if of the second - then second bit to be 1.
+  // BUT, IF it turns out that this diagram is predecessor for both of top level diagrams,
+  // we should count it's flag to be 3 - bits for both
 
   neededDiagrams.push_back(d1.GetDiagramNumber()._get_digit(0));
   neededDiagrams.push_back(d2.GetDiagramNumber()._get_digit(0));
+  ancestorFlags.push_back(1);
+  ancestorFlags.push_back(2);
+
+  numbersOfNeededDiagramsOnLevel.push_back(2);
 
   int n = d1.m_cellsNumber;
   int startIndexInVector = 0; // indicate start and end of current level diagrams in neededDiagrams
   int endIndexInVector = 1;
-  startsOfLevels.push_back(startIndexInVector);
-  endsOfLevels.push_back(endIndexInVector);
 
   for (int i = n - 1; i > 2; i--) // we assume that we have metric on the second floor
   {
+    size_t neededDiagramsNumberOnLevel = 0;
     for (int j = startIndexInVector; j <= endIndexInVector; j++)
     {
       YungDiagram d(neededDiagrams[j]);
@@ -947,8 +955,21 @@ double YungDiagramHandler::countKantorovichDistance(YungDiagram &d1, YungDiagram
           }
           size_t num = GetSmallDiagramNumber(d.m_cellsNumber, d.m_cols);
           // check if we haven't added thid diagram as needed already
-          if (std::find(neededDiagrams.begin(), neededDiagrams.end(), num) == neededDiagrams.end() && num > 3)
-            neededDiagrams.push_back(num);
+          vector<size_t>::iterator iter;
+          if ((iter = std::find(neededDiagrams.begin(), neededDiagrams.end(), num)) == neededDiagrams.end())
+          {
+            if (num > 3)
+            {
+              neededDiagrams.push_back(num);
+              neededDiagramsNumberOnLevel++;
+              ancestorFlags.push_back(ancestorFlags[j]);
+            }
+          } 
+          else // maybe modify flags
+          {
+            size_t ind = iter - neededDiagrams.begin();
+            ancestorFlags[ind] |= ancestorFlags[j];
+          }
 
           if (needResize)
             d.m_cols.push_back(0);
@@ -958,19 +979,19 @@ double YungDiagramHandler::countKantorovichDistance(YungDiagram &d1, YungDiagram
       d.m_cellsNumber++; // for proper deletion
     }
 
+    numbersOfNeededDiagramsOnLevel.push_back(neededDiagramsNumberOnLevel);
     startIndexInVector = endIndexInVector + 1;
     endIndexInVector = neededDiagrams.size() - 1;
-    startsOfLevels.push_back(startIndexInVector);
-    endsOfLevels.push_back(endIndexInVector);
   }
 
   map<num_pair, double> distances; // key is pair of diagram numbers, first number is less than second.
- // distances.push_back(make_pair<num_pair, double>(make_pair<size_t, size_t>(2, 3), 1.0));
+
   distances.insert(pair<num_pair, double>(pair<size_t, size_t>(2, 3), 1.0));
-  for (int i = 3, levelIndex = endsOfLevels.size() - 1; i <= n; i++, levelIndex--) 
+  endIndexInVector = neededDiagrams.size() - 1;
+  size_t solvedTranspProblems = 0;
+  for (int i = 3, levelIndex = numbersOfNeededDiagramsOnLevel.size() - 1; i <= n; i++, levelIndex--) 
   {
-    endIndexInVector = endsOfLevels[levelIndex];
-    startIndexInVector = startsOfLevels[levelIndex];
+    startIndexInVector = endIndexInVector - numbersOfNeededDiagramsOnLevel[levelIndex] + 1;
 
     // last is not needed for it's distances will be counted during previous steps
     for (int j = startIndexInVector; j < endIndexInVector; j++)
@@ -984,6 +1005,9 @@ double YungDiagramHandler::countKantorovichDistance(YungDiagram &d1, YungDiagram
 
       for (int k = j + 1; k <= endIndexInVector; k++)
       {
+        if (ancestorFlags[k] == ancestorFlags[j] && (ancestorFlags[k] ^ 3)) // boost!? yes, about 2 times
+          continue;
+
         dVector c2;
         vector<size_t> nums2; // numbers of predecessors of d2
         countCoefficientsForKantorovichMetric(neededDiagrams[k], c2, nums2);
@@ -1013,6 +1037,7 @@ double YungDiagramHandler::countKantorovichDistance(YungDiagram &d1, YungDiagram
           cout << "Potential method error\n";
         else
         {
+          solvedTranspProblems++;
           double dist = 0;
           for (size_t l = 0; l < s1; l++)
           {
@@ -1028,9 +1053,171 @@ double YungDiagramHandler::countKantorovichDistance(YungDiagram &d1, YungDiagram
         }
       }
     }
+    endIndexInVector = startIndexInVector - 1;
   }
+
+  cout << "During distance finding were solved " << solvedTranspProblems << " transportation problems.\n";
 
   if (neededDiagrams[0] < neededDiagrams[1])
     return distances[num_pair(neededDiagrams[0], neededDiagrams[1])];
   return distances[num_pair(neededDiagrams[1], neededDiagrams[0])];
+}
+
+double YungDiagramHandler::countKantorovichDistance(size_t n1, size_t n2)
+{
+  return (countKantorovichDistance(YungDiagram(n1), YungDiagram(n2)));
+}
+
+size_t YungDiagramHandler::GetSmallDiagramNumber(size_t colsNumber, ...)
+{
+  va_list vl;
+  va_start(vl, colsNumber);
+  YungDiagram d;
+  d.m_cols.resize(colsNumber);
+  d.m_cellsNumber = 0;
+  d.m_numberIsCounted = false;
+  for (size_t i = 0; i < colsNumber; i++)
+  {
+    size_t col = va_arg(vl, size_t);
+    d.m_cols[i] = col;
+    d.m_cellsNumber += col;
+  }
+
+  va_end(vl);
+  std::sort(d.m_cols.begin(), d.m_cols.end(), std::greater<size_t>());
+  return d.GetDiagramNumber()._get_digit(0);
+}
+
+boost::xint::integer YungDiagramHandler::GetFirstNumberWithNCells(size_t n)
+{
+  return GetFirstNumberWithNPlusOneCells(n - 1);
+}
+
+boost::xint::integer YungDiagramHandler::GetLastNumberWithNCells(size_t n)
+{
+  return GetFirstNumberWithNPlusOneCells(n) - 1;
+}
+
+void YungDiagramHandler::printSmallDiagramsPair(size_t n1, size_t n2)
+{
+  YungDiagram d1(n1);
+  YungDiagram d2(n2);
+
+  size_t h = std::max<>(d1.m_cols[0], d2.m_cols[0]);
+  size_t w1 = d1.m_cols.size();
+  size_t w2 = d2.m_cols.size();
+
+  for (int i = h; i > 0; i--)
+  {
+    for (int j = 0; j < w1; j++)
+    {
+      if (d1.m_cols[j] >= i)
+        cout << "*";
+      else
+        cout << " ";
+    }
+    cout << "  ";
+    for (int j = 0; j < w2; j++)
+    {
+      if (d2.m_cols[j] >= i)
+        cout << "*";
+      else
+        cout << " ";
+    }
+
+    cout << endl;
+  }
+}
+
+void YungDiagramHandler::printSmallDiagram(size_t n)
+{
+  YungDiagram d(n);
+
+  size_t h = d.m_cols[0];
+  size_t w = d.m_cols.size();
+
+  cout << endl;
+  for (int i = h; i > 0; i--)
+  {
+    for (int j = 0; j < w; j++)
+    {
+      if (d.m_cols[j] >= i)
+        cout << "*";
+      else
+        cout << " ";
+    }
+    cout << endl;
+  }
+  
+}
+
+void YungDiagramHandler::getBall(size_t num, double r, vector<size_t> &ballDiagrams, vector<double> &ballDistances)
+{
+  YungDiagram d(num);
+  size_t cellsNum = d.getCellsNumber();
+  size_t n1 = GetFirstNumberWithNCells(cellsNum)._get_digit(0);
+  size_t n2 = GetLastNumberWithNCells(cellsNum)._get_digit(0);
+
+  for (size_t i = n1; i <= n2; i++)
+  {
+    double dist = countKantorovichDistance(num, i);
+    if (dist <= r)
+    {
+      ballDistances.push_back(dist);
+      ballDiagrams.push_back(i);
+    }
+  }
+}
+
+// for small diagrams!
+void YungDiagramHandler::getLinearCoefficientsEstimationKantorovich(size_t diagramNum, std::vector<double> &c, vector<vector<size_t> > &deltas)
+{
+  vector<size_t> diagrams;
+  vector<double> dists;
+  // just get all distances between given diagram and all other on the level
+  getBall(diagramNum, 1.1, diagrams, dists);
+
+  YungDiagram d(diagramNum);
+  size_t cellsNum = d.GetDiagramNumber()._get_digit(0);
+  dMatrix delta(diagrams.size(), cellsNum);
+  dVector ro(diagrams.size());
+  for (size_t i = 0; i < diagrams.size(); i++)
+    ro(i) = dists[i];
+
+  size_t n1 = GetFirstNumberWithNCells(cellsNum)._get_digit(0);
+  size_t n2 = GetLastNumberWithNCells(cellsNum)._get_digit(0);
+  
+  deltas.resize(n2 - n1 + 1);
+  vector<size_t> rows(cellsNum);
+  size_t h = 1;
+  for (size_t i = d.m_cols.size() - 1; i >= 0; i++)
+  {
+    while (d.m_cols[i] >= h)
+    {
+      rows[h - 1] = i;
+      h++;
+    }
+  }
+
+  for (size_t i = n1, ind = 0; i <= n2; i++, ind++)
+  {
+    YungDiagram d1(i);
+    h = 1;
+    for (size_t j = d1.m_cols.size() - 1; j >= 0; j++)
+    {
+      while (d.m_cols[i] >= h)
+      {
+        deltas[ind][h - 1] = delta(i, h - 1) = rows[h - 1] - j;
+        h++;
+      }
+    }
+    for (size_t j = h - 1; j < rows.size(); j++)
+      deltas[ind][j] = delta(i, j) = rows[j];
+  }
+
+  dMatrix dd = boost::numeric::ublas::prod(boost::numeric::ublas::trans(delta), delta);
+  dVector b =  boost::numeric::ublas::prod(boost::numeric::ublas::trans(ro), delta);
+  dVector C = gausSolve(dd, b);
+  for (int i = 0; i < C.size(); i++)
+    c[i] = C(i);
 }

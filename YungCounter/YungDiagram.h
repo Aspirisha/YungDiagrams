@@ -1,5 +1,6 @@
 #pragma once
 #include <boost\xint\xint.hpp>
+#include "globaldefinitions.h"
 
 enum ProcessType 
 {
@@ -51,12 +52,17 @@ public:
 class YungDiagramHandler
 {
 public:
-  static boost::xint::integer GetMaxNumberWithNCells(size_t n);
+  static boost::xint::integer GetFirstNumberWithNPlusOneCells(size_t n);
+  static boost::xint::integer GetFirstNumberWithNCells(size_t n);
+  static boost::xint::integer GetLastNumberWithNCells(size_t n);
+
   static void CountProbabilities(ProcessType processType, size_t cellsNumber);
   static void PrintPartitionsAmount(const std::string &fileName);
 
   static void SortByProbability();
   static size_t GetSmallDiagramNumber(size_t cellsNumber, const std::vector<size_t> &cols, bool withExtraCell = false);
+  static size_t GetSmallDiagramNumber(size_t colsNumber, ...);
+
   static bool isPartitionsAmountCounted() { return partitionsAmount != 0;}
   static void countPartitionsAmount();
 
@@ -74,10 +80,16 @@ public:
   static void saveColumnsToFile(const char* fileName, YungDiagram *d);
 
   static double countKantorovichDistance(YungDiagram &d1, YungDiagram &d2);
+  static double countKantorovichDistance(size_t n1, size_t n2);
 
+  static void printSmallDiagram(size_t n);
+  static void printSmallDiagramsPair(size_t n1, size_t n2);
+
+  static void getBall(size_t num, double r, std::vector<size_t> &ballDiagrams, std::vector<double> &ballDistances);
+  static void getLinearCoefficientsEstimationKantorovich(size_t diagramNum, std::vector<double> &c, std::vector<std::vector<size_t> > &deltas);
 private:
   static void sort(int l, int r); // sorts array probabilities and numbers
-  
+  static void countCoefficientsForKantorovichMetric(size_t diagramNumber, dVector &coefficients, std::vector<size_t> &predecessorsNums);
   
   static const int maxCellsNumber;
   static boost::xint::integer *partitionsAmount; 
