@@ -1170,7 +1170,7 @@ void YungDiagramHandler::getBall(size_t num, double r, vector<size_t> &ballDiagr
 }
 
 // for small diagrams!
-void YungDiagramHandler::getLinearCoefficientsEstimationKantorovich(size_t diagramNum, std::vector<double> &c, vector<vector<size_t> > &deltas)
+void YungDiagramHandler::getLinearCoefficientsEstimationKantorovich(size_t diagramNum, dVector &c, dMatrix &delta)
 {
   vector<size_t> diagrams;
   vector<double> dists;
@@ -1178,8 +1178,7 @@ void YungDiagramHandler::getLinearCoefficientsEstimationKantorovich(size_t diagr
   getBall(diagramNum, 1.1, diagrams, dists);
 
   YungDiagram d(diagramNum);
-  size_t cellsNum = d.GetDiagramNumber()._get_digit(0);
-  dMatrix delta(diagrams.size(), cellsNum);
+  size_t cellsNum = d.m_cellsNumber;
   dVector ro(diagrams.size());
   for (size_t i = 0; i < diagrams.size(); i++)
     ro(i) = dists[i];
@@ -1187,37 +1186,36 @@ void YungDiagramHandler::getLinearCoefficientsEstimationKantorovich(size_t diagr
   size_t n1 = GetFirstNumberWithNCells(cellsNum)._get_digit(0);
   size_t n2 = GetLastNumberWithNCells(cellsNum)._get_digit(0);
   
-  deltas.resize(n2 - n1 + 1);
-  vector<size_t> rows(cellsNum);
+  vector<int> rows(cellsNum);
   size_t h = 1;
-  for (size_t i = d.m_cols.size() - 1; i >= 0; i++)
+  for (size_t i = d.m_cols.size(); i > 0; i--)
   {
-    while (d.m_cols[i] >= h)
+    while (d.m_cols[i - 1] >= h)
     {
       rows[h - 1] = i;
       h++;
     }
   }
 
+  delta.resize(n2 - n1 + 1, cellsNum);
   for (size_t i = n1, ind = 0; i <= n2; i++, ind++)
   {
     YungDiagram d1(i);
     h = 1;
-    for (size_t j = d1.m_cols.size() - 1; j >= 0; j++)
+    for (int j = d1.m_cols.size(); j > 0; j--) // here int is a must
     {
-      while (d.m_cols[i] >= h)
+      while (d1.m_cols[j - 1] >= h)
       {
-        deltas[ind][h - 1] = delta(i, h - 1) = rows[h - 1] - j;
+        //delta(ind, h - 1) = fabs((double)rows[h - 1] - j);
+        delta(ind, h - 1) = rows[h - 1] - j;
         h++;
       }
     }
     for (size_t j = h - 1; j < rows.size(); j++)
-      deltas[ind][j] = delta(i, j) = rows[j];
+      delta(ind, j) = rows[j];
   }
 
   dMatrix dd = boost::numeric::ublas::prod(boost::numeric::ublas::trans(delta), delta);
   dVector b =  boost::numeric::ublas::prod(boost::numeric::ublas::trans(ro), delta);
-  dVector C = gausSolve(dd, b);
-  for (int i = 0; i < C.size(); i++)
-    c[i] = C(i);
+  c = gausSolve(dd, b);
 }

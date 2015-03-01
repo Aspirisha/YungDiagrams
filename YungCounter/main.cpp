@@ -100,6 +100,20 @@ void countDistanceBetweenUniformlyRandomDiagrams()
   cout  << "dist(" << d1 << ", " << d2 << ") = "<< fixed << dist << endl;
 }
 
+void writeKantorovichBallToFile(const char *fileName, size_t diagramNum, double r)
+{
+  vector<double> ballDists;
+  vector<size_t> ballDiagrams;
+
+  YungDiagramHandler::getBall(diagramNum, r, ballDiagrams, ballDists);
+
+  ofstream out(fileName);
+  for (size_t i = 0; i < ballDists.size(); i++)
+  {
+    out << ballDiagrams[i] << " " << ballDists[i] << endl;
+  }
+}
+
 void writeKantorovichBallToFile(const char *fileName)
 {
   size_t cellsNum;
@@ -111,17 +125,7 @@ void writeKantorovichBallToFile(const char *fileName)
   cout << "radius: ";
   cin >> r;
 
-  vector<double> ballDists;
-  vector<size_t> ballDiagrams;
-
-  YungDiagramHandler::getBall(getSmallUniformlyRandomDiagram(cellsNum), r, ballDiagrams, ballDists);
-
-  ofstream out(fileName);
-  for (size_t i = 0; i < ballDists.size(); i++)
-  {
-    out << ballDiagrams[i] << " " << ballDists[i] << endl;
-  }
-
+  writeKantorovichBallToFile(fileName, getSmallUniformlyRandomDiagram(cellsNum), r);
 }
 
 void printDiagramsInCycle()
@@ -146,17 +150,11 @@ void printDiagramsInCycle()
   }
 }
 
-void writeKantorovichEstimationCoefs(const char *fileName)
+void writeKantorovichEstimationCoefs(const char *fileName, size_t diagramNum)
 {
-  cout << "Estimation for Kantorovich distance.\n";
-  cout << "Cells number for random diagram: ";
-  size_t cellsNum;
-  cin >> cellsNum;
-  YungDiagram d(getSmallUniformlyRandomDiagram(cellsNum));
-
-  vector<double> c;
-  vector<vector<size_t> > deltas;
-  YungDiagramHandler::getLinearCoefficientsEstimationKantorovich(d.GetDiagramNumber()._get_digit(0), c, deltas);
+  dVector c;
+  dMatrix deltas;
+  YungDiagramHandler::getLinearCoefficientsEstimationKantorovich(diagramNum, c, deltas);
 
   ofstream out(fileName);
   for (size_t i = 0; i < c.size(); i++)
@@ -164,15 +162,45 @@ void writeKantorovichEstimationCoefs(const char *fileName)
   out << endl;
   out << endl;
 
-  for (size_t i = 0; i < deltas.size(); i++)
+  YungDiagram d(diagramNum);
+  size_t cellsNum = d.m_cellsNumber;
+
+  for (size_t i = 0; i < deltas.size1(); i++)
   {
     for (size_t j = 0; j < cellsNum; j++)
     {
-      out << deltas[i][j] << " ";
+      out << ceil(deltas(i, j)) << " ";
     }
     out << endl;
   }
+}
 
+void writeKantorovichEstimationCoefs(const char *fileName)
+{
+  cout << "Estimation for Kantorovich distance.\n";
+  cout << "Cells number for random diagram: ";
+  size_t cellsNum;
+  cin >> cellsNum;
+
+  writeKantorovichEstimationCoefs(fileName, getSmallUniformlyRandomDiagram(cellsNum));
+}
+
+void writeEstimationCoefficientsAndDistances(const char *fileNameCoefs, const char *fileNameDists, size_t diagramNumber)
+{
+  writeKantorovichEstimationCoefs(fileNameCoefs, diagramNumber);
+  writeKantorovichBallToFile(fileNameDists, diagramNumber, 1.1);
+}
+
+void writeEstimationCoefficientsAndDistances(const char *fileNameCoefs, const char *fileNameDists)
+{
+  cout << "Estimation and distances for random diagrm.\n";
+  cout << "Cells number for random diagram: ";
+  size_t cellsNum;
+  cin >> cellsNum;
+
+  size_t diagramNumber = getSmallUniformlyRandomDiagram(cellsNum);
+  cout << "Diagram number is " << diagramNumber << endl;
+  writeEstimationCoefficientsAndDistances(fileNameCoefs, fileNameDists, diagramNumber);
 }
 
 int main(void)
@@ -230,7 +258,8 @@ int main(void)
   //countDistanceBetweenUniformlyRandomDiagrams();
   //writeKantorovichBallToFile("AllDistances20.txt");
   //printDiagramsInCycle();
-  writeKantorovichEstimationCoefs("EstimationCoefs.txt");
+  //writeKantorovichEstimationCoefs("EstimationCoefs.txt");
+  writeEstimationCoefficientsAndDistances("EstimationCoefs.txt", "EstimationDistances.txt", 2223);
   int dummy = 0;
 
 

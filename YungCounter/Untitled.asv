@@ -57,7 +57,7 @@ hold on;
 
 A = load('1000000Cells_ALPHA.txt');
 x = 1: 1: size(A, 2);
-plot(x, A, 'r');
+bar(x, A, 'b');
 grid on;
 hold on;
 set(gcf, 'InvertHardCopy', 'off');
@@ -105,3 +105,36 @@ plot3(x,y,z,'o');
 % Kantorovich ball
 A = load('KantorovichBall.txt');
 plot(A(:,1), A(:,2), '-r');
+
+A = load('AllDistances20.txt');
+plot(A(:,1), A(:,2), '-r');
+grid on;
+set(gcf, 'InvertHardCopy', 'off');
+saveas(gcf, 'DiagramsDists20.jpg');
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Coefficients estimation
+A = load('EstimationCoefs.txt');
+c = A(1, :);
+X = A(2:end,:);
+y = X * c';
+x = 1:1:size(X,1);
+plot(x, y, '*b');
+min(y)
+grid on;
+hold on;
+B = load('EstimationDistances.txt');
+Y = B(:, 2);
+plot(x, Y, '*r');
+legend('Estimation', 'Real distances');
+set(gcf, 'InvertHardCopy', 'off');
+saveas(gcf, 'MetricEstimation20.jpg');
+hold off;
+
+x = 1:1:size(c, 2);
+plot(x, c, '*b');
+grid on;
+legend('ќценка c(i)');
+set(gcf, 'InvertHardCopy', 'off');
+saveas(gcf, 'CoefficientsEstimation20.jpg');
+
