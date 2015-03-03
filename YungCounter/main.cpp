@@ -2,10 +2,14 @@
 #include <boost\xint\xint.hpp>
 #include <random>
 #include <chrono>
+#include <limits>
 #include "YungDiagram.h"
+#include "YungDiagram3D.h"
 
 using namespace std;
 #define _CRT_SECURE_NO_WARNINGS
+
+#undef max
 
 void countDistanceBetweenInputDiagrams() 
 {
@@ -150,6 +154,34 @@ void printDiagramsInCycle()
   }
 }
 
+void printDiagrams3DInCycle()
+{
+  cout << "Insert diagrams numbers to print until you're done. To exit insert 0.\n";
+
+  boost::xint::integer num = 0;
+  while (true)
+  {
+    cout << "Diagram number: ";
+
+    cin >> num;
+    while (cin.fail())
+    {
+      cin.clear();
+      cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+      cin >> num;
+    }
+    
+
+    if (num == 0)
+      break;
+
+    YungDiagram3D d(num);
+    d.printToConsole();
+    cout << endl;
+    cout.flush();
+  }
+}
+
 void writeKantorovichEstimationCoefs(const char *fileName, size_t diagramNum)
 {
   dVector c;
@@ -201,6 +233,26 @@ void writeEstimationCoefficientsAndDistances(const char *fileNameCoefs, const ch
   size_t diagramNumber = getSmallUniformlyRandomDiagram(cellsNum);
   cout << "Diagram number is " << diagramNumber << endl;
   writeEstimationCoefficientsAndDistances(fileNameCoefs, fileNameDists, diagramNumber);
+}
+
+void readFromFileAndPrintDiagram3DNumber(const char *fileName)
+{
+  YungDiagram3D d;
+  d.readFromFile(fileName);
+  cout << d.GetDiagramNumber() << endl;
+}
+
+void printRandomDiagram3DHooks()
+{
+  cout << "Random hooks process diagram generation.\n";
+  cout << "Insert number of cells: \n";
+  size_t n = 0;
+  cin >> n;
+  if (n == 0)
+    return;
+  YungDiagram3D *d = YungDiagram3DHandler::getRandomWalkDiagram(HOOKS, n);
+  //d->printToConsole();
+  d->saveToFile("3dHooksRandom.txt");
 }
 
 int main(void)
@@ -259,7 +311,13 @@ int main(void)
   //writeKantorovichBallToFile("AllDistances20.txt");
   //printDiagramsInCycle();
   //writeKantorovichEstimationCoefs("EstimationCoefs.txt");
-  writeEstimationCoefficientsAndDistances("EstimationCoefs.txt", "EstimationDistances.txt", 2223);
+  //writeEstimationCoefficientsAndDistances("EstimationCoefs.txt", "EstimationDistances.txt", 2223);
+
+  //****************3D diagrams**********************************************/
+  //printDiagrams3DInCycle();
+  //readFromFileAndPrintDiagram3DNumber("3D.txt");
+  printRandomDiagram3DHooks();
+  
   int dummy = 0;
 
 

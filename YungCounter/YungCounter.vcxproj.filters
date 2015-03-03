@@ -30,6 +30,9 @@
     <ClCompile Include="gaussolver.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="YungDiagram3D.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="YungDiagram.h">

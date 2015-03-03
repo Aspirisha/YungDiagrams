@@ -609,7 +609,7 @@ YungDiagram *YungDiagramHandler::getRandomDiagram(ProcessType procType, size_t n
           y = currentDiagram->m_cols[x - 1] + 1;
 
         double newProb = 1.0;
-        size_t height = 0;
+        size_t height = 0; // here probably 1
         size_t width = 0;
         size_t rightColWithHeightCells = currentDiagram->m_cols.size() - 1;
         
