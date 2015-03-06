@@ -384,62 +384,16 @@ YungDiagram3D *YungDiagram3DHandler::getRandomWalkDiagramFast(ProcessType3D type
           if (canAddCell)
           {
             double newProb = 1.0;
-            const size_t z = d->m_cols[ind_pair(j, k)]; // cell (j, k, z) is counted
-            const size_t y = k + 1; // (x, y, z) are now the cell coordinates over which we can add a cell
-            const size_t x = j + 1;
+            const int z = d->m_cols[ind_pair(j, k)]; // cell (j, k, z) is counted
 
-            size_t dx = 0; // dx = max dx : h(x + dx, y) >= 1, i.e. max dx : rows_Y[x - 1 + dx] >= y; doesn't count (x,y,z)
-            size_t dy = max_k - k - 1; // dy = max dy : h(x, y + dy) >= 1, i.e.  dy = rows_Y[x - 1] - k - 1, cause we don't need to count(x,y,z) cell here
-            size_t dz = 0;
+            for (int l = 0; l < z; l++) // l counts (x, y, z) cell and centre of hook
+              newProb -= (newProb / (1 + hooks[ind_pair(j, k)][l]));
 
-            for (size_t l = j + 1; l < d->m_rowsY.size(); l++)
-            {
-              if (d->m_rowsY[l] >= y)
-                dx++;
-            }
+            for (int l = 0; l < j; l++) // l doesn't count (x,y,z) cell, counts centre of hook
+              newProb -= (newProb / (1 + hooks[ind_pair(l, k)][z]));
 
-            dz = 0; // just goes over 1 .. z. Nobody counts (x,y,z)
-            for (size_t l = z; l > 0; l--) // l counts (x, y, z) cell and centre of hook
-            {
-              newProb *= (l + dx + dy);
-              newProb /= (l + dx + dy + 1);
-              
-              dz++;
-              while (d->m_cols[ind_pair(j + dx, k)] <= dz && dx)
-                dx--;
-              while (d->m_cols[ind_pair(j, k + dy)] <= dz && dy)
-                dy--;
-            }
-
-            // no more (x,y,z)!
-            dx = 0;
-            for (size_t l = x - 1; l > 0; l--) // l doesn't count (x,y,z) cell, counts centre of hook
-            {
-              dz = (d->m_cols[ind_pair(dx, k)] - z - 1); // cell (x, y, z) is not counted
-              dy = d->m_rowsY[dx] - y; //  cell (x,y,z) is not counted
-              while (d->m_cols[ind_pair(dx, k + dy)] < z && dy) // here wass j
-                dy--;
-              newProb *= (l + dy + dz);
-              newProb /= (l + dy + dz + 1);
-              dx++;
-            }
-
-            dx = d->m_rowsY.size() - x;
-            dy = 0;
-            while (d->m_cols[ind_pair(j + dx, dy)] < z && dx)
-              dx--;
-            for (size_t l = y - 1; l > 0; l--) // l not counts (x,y,z), counts centre of hook
-            {
-              dz = d->m_cols[ind_pair(j, dy)] - z - 1;
-              
-              newProb *= (l + dx + dz);
-              newProb /= (l + dx + dz + 1);
-              dy++;
-              while (d->m_rowsY[dx + j] <= dy && dx)
-                dx--;
-              while (d->m_cols[ind_pair(j + dx, dy)] < z && dx)
-                dx--;
-            }
+            for (int l = 0; l < k; l++) // l not counts (x,y,z), counts centre of hook
+              newProb -= (newProb / (1 + hooks[ind_pair(j, l)][z]));
 
             probs.push_back(newProb);
             newPoints.push_back(ind_pair(j, k));
@@ -460,6 +414,23 @@ YungDiagram3D *YungDiagram3DHandler::getRandomWalkDiagramFast(ProcessType3D type
         d->m_rowsY.push_back(1);
       else if (d->m_rowsY[newPoints[randomAncestor].first] < newPoints[randomAncestor].second + 1)
         d->m_rowsY[newPoints[randomAncestor].first]++;
+
+
+      hooks[newPoints[randomAncestor]].push_back(1);
+      // recount hooks that were touched by addin a cell
+      const size_t z = d->m_cols[newPoints[randomAncestor]] - 1; // cell (j, k, z) is counted
+      const size_t y = newPoints[randomAncestor].second; // (x, y, z) are now the cell coordinates over which we can add a cell
+      const size_t x = newPoints[randomAncestor].first;
+
+      for (size_t l = 0; l < z; l++) // l counts (x, y, z) cell and centre of hook
+        hooks[ind_pair(x, y)][l]++;
+
+      for (size_t l = 0; l < x; l++) // l doesn't count (x,y,z) cell, counts centre of hook
+        hooks[ind_pair(l, y)][z]++;
+
+      for (size_t l = 0; l < y; l++) // l not counts (x,y,z), counts centre of hook
+        hooks[ind_pair(x, l)][z]++;
+
     }
     break;
   }

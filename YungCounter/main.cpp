@@ -250,9 +250,37 @@ void printRandomDiagram3DHooks()
   cin >> n;
   if (n == 0)
     return;
-  YungDiagram3D *d = YungDiagram3DHandler::getRandomWalkDiagram(HOOKS, n);
+
+  std::chrono::time_point<std::chrono::system_clock> start, end;
+  start = std::chrono::system_clock::now();
+  YungDiagram3D *d = YungDiagram3DHandler::getRandomWalkDiagramFast(HOOKS, n);
+  end = std::chrono::system_clock::now();
+  int elapsed_seconds = std::chrono::duration_cast<std::chrono::seconds>
+                             (end-start).count();
+
   //d->printToConsole();
-  d->saveToFile("3dHooksRandom.txt");
+  cout << "elapsed time: " << elapsed_seconds << "s\n";
+  d->saveToFile("3dHooksRandomFast2.txt");
+}
+
+void countTimeForRandom3D()
+{
+  ofstream out("3Dtime.txt");
+
+  std::chrono::time_point<std::chrono::system_clock> start, end;
+  for (size_t j = 1; j < 100000; j += 100)
+  {
+    cout << "processing " << j << " cells...\n";
+    start = std::chrono::system_clock::now();
+    YungDiagram3D *d = YungDiagram3DHandler::getRandomWalkDiagramFast(HOOKS, j);
+    end = std::chrono::system_clock::now();
+
+    int elapsed_seconds = std::chrono::duration_cast<std::chrono::seconds>
+                             (end-start).count();
+
+    out << j << " " << elapsed_seconds << endl;
+    delete d;
+  }
 }
 
 int main(void)
@@ -316,7 +344,8 @@ int main(void)
   //****************3D diagrams**********************************************/
   //printDiagrams3DInCycle();
   //readFromFileAndPrintDiagram3DNumber("3D.txt");
-  printRandomDiagram3DHooks();
+  //printRandomDiagram3DHooks();
+  countTimeForRandom3D();
   
   int dummy = 0;
 

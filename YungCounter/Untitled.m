@@ -138,3 +138,71 @@ legend('ќценка c(i)');
 set(gcf, 'InvertHardCopy', 'off');
 saveas(gcf, 'CoefficientsEstimation20.jpg');
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%5
+% 3d assymptotic shape
+A = importdata('3dHooksRandomFast.txt');
+A(isnan(A)) = 0;
+figure;
+%A = A .* 100;
+h = bar3(A);
+[r c] = size(A);
+for i = 1:c
+    zdata = [];
+    for j = 1:r
+        zdata = [zdata; ones(6,4)*A(j,i)];
+    end
+    set(h(i),'Cdata',zdata)
+end
+colormap jet
+for i = 1:numel(h)
+  index = logical(kron(A(:,i) == 0,ones(6,1)));
+  zData = get(h(i),'ZData');
+  zData(index,:) = nan;
+  set(h(i),'ZData',zData);
+end
+colorbar
+set(gcf, 'InvertHardCopy', 'off');
+saveas(gcf, '3DHooks100000.jpg');
+
+
+x = ones(size(A, 1) * size(A, 2), 1);
+y = ones(size(A, 1) * size(A, 2), 1);
+z = ones(size(A, 1) * size(A, 2), 1);
+ind = 1;
+for i = 1 : 1 : size(A, 1)
+    for j = 1: 1 : size(A, 2);
+        if (A(i, j) ~= 0)
+            x(ind) = i;
+            y(ind) = j;
+            z(ind) = A(i, j);
+            ind = ind + 1;
+        end
+    end
+end
+ind = ind - 1;
+x = x(1:ind);
+y = y(1:ind);
+z = z(1:ind);
+
+figure;
+F = TriScatteredInterp(x, y, z);
+ti = 0:0.1:135;
+[qx,qy] = meshgrid(ti,ti);
+qz = F(qx,qy);
+mesh(qx,qy,qz);
+
+t = load('3dtime.txt');
+x = t(:, 1);
+y = t(:, 2);
+coeff = polyfit(x, y, 2);
+xfit = linspace(min(x),max(x),20);
+yfit = polyval(coeff,xfit);
+h = plot(x,y,'*',xfit,yfit,'r');
+set(h,'LineWidth',3);
+xlabel('Number of cells');
+ylabel('Time, seconds');
+grid on;
+set(gcf, 'InvertHardCopy', 'off');
+saveas(gcf, 'AssymptHooksTime.jpg');
+
+polyval(coeff, 100000);
