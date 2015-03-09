@@ -880,7 +880,7 @@ void YungDiagramHandler::countCoefficientsForKantorovichMetric(size_t diagramNum
         }
       }
         
-      c *= c;
+      //c *= c;
       sum_coefs += c;
       coefficients(coefsIndex++) = c;
 
@@ -1169,22 +1169,53 @@ void YungDiagramHandler::getBall(size_t num, double r, vector<size_t> &ballDiagr
   }
 }
 
+void YungDiagramHandler::getDistancesToSomeDiagrams(size_t num, size_t diagramsNumber, 
+                                                    std::vector<size_t> &diagrams, std::vector<double> &distances)
+{
+  YungDiagram d(num);
+  size_t cellsNum = d.getCellsNumber();
+  size_t n1 = GetFirstNumberWithNCells(cellsNum)._get_digit(0);
+  size_t n2 = GetLastNumberWithNCells(cellsNum)._get_digit(0);
+
+  double delta = 1;
+  size_t maxOffset = n2 - n1;
+  if (diagramsNumber < maxOffset)
+    delta = double(maxOffset) / diagramsNumber;
+
+  for (size_t offset = 0, i = 0; offset <= maxOffset; )
+  {
+    size_t number = n1 + offset;
+    double dist = countKantorovichDistance(num, number);
+    cout << "dist = " << dist << endl;
+    distances.push_back(dist);
+    diagrams.push_back(number);
+    ++i;
+    offset = size_t(i * delta);
+  }
+}
+
 // for small diagrams!
-void YungDiagramHandler::getLinearCoefficientsEstimationKantorovich(size_t diagramNum, dVector &c, dMatrix &delta)
+void YungDiagramHandler::getLinearCoefficientsEstimationKantorovich(size_t diagramNum, dVector &c, dMatrix &delta, size_t checkedNeighbours)
 {
   vector<size_t> diagrams;
   vector<double> dists;
-  // just get all distances between given diagram and all other on the level
-  getBall(diagramNum, 1.1, diagrams, dists);
 
+  getLinearCoefficientsEstimationKantorovich(diagramNum, c, delta, checkedNeighbours, diagrams, dists);
+}
+
+void YungDiagramHandler::getLinearCoefficientsEstimationKantorovich(size_t diagramNum, dVector &c, dMatrix &delta, 
+    size_t checkedNeighbours, std::vector<size_t> &diagrams, std::vector<double> &dists)
+{
+    // just get all distances between given diagram and all other on the level
+  //getBall(diagramNum, 1.1, diagrams, dists);
+  getDistancesToSomeDiagrams(diagramNum, checkedNeighbours, diagrams, dists);
   YungDiagram d(diagramNum);
   size_t cellsNum = d.m_cellsNumber;
   dVector ro(diagrams.size());
+
+  cout << "diagrams.size() = " << diagrams.size() << endl;
   for (size_t i = 0; i < diagrams.size(); i++)
     ro(i) = dists[i];
-
-  size_t n1 = GetFirstNumberWithNCells(cellsNum)._get_digit(0);
-  size_t n2 = GetLastNumberWithNCells(cellsNum)._get_digit(0);
   
   vector<int> rows(cellsNum);
   size_t h = 1;
@@ -1197,17 +1228,17 @@ void YungDiagramHandler::getLinearCoefficientsEstimationKantorovich(size_t diagr
     }
   }
 
-  delta.resize(n2 - n1 + 1, cellsNum);
-  for (size_t i = n1, ind = 0; i <= n2; i++, ind++)
+  delta.resize(diagrams.size(), cellsNum);
+  for (size_t ind = 0; ind < diagrams.size(); ind++)
   {
-    YungDiagram d1(i);
+    YungDiagram d1(diagrams[ind]);
     h = 1;
     for (int j = d1.m_cols.size(); j > 0; j--) // here int is a must
     {
       while (d1.m_cols[j - 1] >= h)
       {
-        //delta(ind, h - 1) = fabs((double)rows[h - 1] - j);
-        delta(ind, h - 1) = rows[h - 1] - j;
+        delta(ind, h - 1) = fabs((double)rows[h - 1] - j);
+        //delta(ind, h - 1) = rows[h - 1] - j;
         h++;
       }
     }
@@ -1215,7 +1246,11 @@ void YungDiagramHandler::getLinearCoefficientsEstimationKantorovich(size_t diagr
       delta(ind, j) = rows[j];
   }
 
+
   dMatrix dd = boost::numeric::ublas::prod(boost::numeric::ublas::trans(delta), delta);
   dVector b =  boost::numeric::ublas::prod(boost::numeric::ublas::trans(ro), delta);
+
+  cout << "dd.size = " << dd.size1() << " " << dd.size2() << endl;
+  cout << "b.size = " << b.size() << endl;
   c = gausSolve(dd, b);
 }

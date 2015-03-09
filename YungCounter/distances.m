@@ -12,3 +12,5 @@ for i = 1:c
 end
 colormap jet
 colorbar
+set(gcf, 'InvertHardCopy', 'off');
+saveas(gcf, 'metricHist2.jpg');

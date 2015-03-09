@@ -1,4 +1,5 @@
 #include "gaussolver.h"
+#include "ioInterface.h"
 #include <boost/numeric/ublas/matrix_proxy.hpp>
 
 using namespace boost::numeric::ublas;
@@ -13,6 +14,7 @@ dVector gausSolve(dMatrix const &A, dVector const &b)
   std::vector<int> order(n);
   for (int i = 0; i < n; i++)
     order[i] = i;
+
 
   for (int i = 0; i < n; i++)
   {
@@ -30,11 +32,17 @@ dVector gausSolve(dMatrix const &A, dVector const &b)
         notZero = B(i, i);
       }
     }
-    if (!notZero)
-      return dVector(0); // no solution cause i-line is zero line
 
-    row(B, i) = row(B, i) / notZero;
-    r(i) /= notZero;
+    if (!notZero)
+    {
+      r(i) = 0;
+    }
+    else
+    {
+      row(B, i) = row(B, i) / notZero;
+      r(i) /= notZero;
+    }
+
     for (int j = 0; j < n; j++)
     {
       if (i != j)

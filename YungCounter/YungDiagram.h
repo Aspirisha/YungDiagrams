@@ -86,7 +86,13 @@ public:
   static void printSmallDiagramsPair(size_t n1, size_t n2);
 
   static void getBall(size_t num, double r, std::vector<size_t> &ballDiagrams, std::vector<double> &ballDistances);
-  static void getLinearCoefficientsEstimationKantorovich(size_t diagramNum, dVector &c, dMatrix &deltas);
+  static void getLinearCoefficientsEstimationKantorovich(size_t diagramNum, dVector &c, dMatrix &deltas, 
+    size_t checkedNeighbours, std::vector<size_t> &diagrams, std::vector<double> &dists);
+  static void getLinearCoefficientsEstimationKantorovich(size_t diagramNum, dVector &c, dMatrix &deltas, 
+    size_t checkedNeighbours);
+
+  static void getDistancesToSomeDiagrams(size_t num, size_t diagramsNumber, std::vector<size_t> &diagrams, std::vector<double> &distances);
+
 private:
   static void sort(int l, int r); // sorts array probabilities and numbers
   static void countCoefficientsForKantorovichMetric(size_t diagramNumber, dVector &coefficients, std::vector<size_t> &predecessorsNums);

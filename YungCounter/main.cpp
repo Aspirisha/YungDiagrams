@@ -33,9 +33,9 @@ void countAllDistancesOnLevel(size_t level, const char *fileName)
  // n2--;
   ofstream out(fileName);
   out.precision(15);
-  for (int i = n1 + 1; i <= n2; i++)
+  for (size_t i = n1 + 1; i <= n2; i++)
   {
-    for (int j = n1 + 1; j <= n2; j++)
+    for (size_t j = n1 + 1; j <= n2; j++)
     {
       out << fixed << YungDiagramHandler::countKantorovichDistance(i, j) << " ";
     }
@@ -182,19 +182,22 @@ void printDiagrams3DInCycle()
   }
 }
 
-void writeKantorovichEstimationCoefs(const char *fileName, size_t diagramNum)
+void writeEstimationCoefficientsAndDistances(const char *fileNameCoefs, const char *fileNameDists, size_t diagramNumber, size_t checkedNeighbours)
 {
   dVector c;
   dMatrix deltas;
-  YungDiagramHandler::getLinearCoefficientsEstimationKantorovich(diagramNum, c, deltas);
+  vector<size_t> diagrams;
+  vector<double> dists;
+  YungDiagramHandler::getLinearCoefficientsEstimationKantorovich(diagramNumber, c, deltas, checkedNeighbours, diagrams, dists);
 
-  ofstream out(fileName);
+  ofstream out(fileNameCoefs);
+  cout << "c.size() = " << c.size() << endl;
   for (size_t i = 0; i < c.size(); i++)
     out << c[i] << " ";
   out << endl;
   out << endl;
 
-  YungDiagram d(diagramNum);
+  YungDiagram d(diagramNumber);
   size_t cellsNum = d.m_cellsNumber;
 
   for (size_t i = 0; i < deltas.size1(); i++)
@@ -205,25 +208,17 @@ void writeKantorovichEstimationCoefs(const char *fileName, size_t diagramNum)
     }
     out << endl;
   }
+
+  out.close();
+  out.open(fileNameDists);
+  for (size_t i = 0; i < dists.size(); i++)
+  {
+    out << diagrams[i] << " " << dists[i] << endl;
+  }
+
 }
 
-void writeKantorovichEstimationCoefs(const char *fileName)
-{
-  cout << "Estimation for Kantorovich distance.\n";
-  cout << "Cells number for random diagram: ";
-  size_t cellsNum;
-  cin >> cellsNum;
-
-  writeKantorovichEstimationCoefs(fileName, getSmallUniformlyRandomDiagram(cellsNum));
-}
-
-void writeEstimationCoefficientsAndDistances(const char *fileNameCoefs, const char *fileNameDists, size_t diagramNumber)
-{
-  writeKantorovichEstimationCoefs(fileNameCoefs, diagramNumber);
-  writeKantorovichBallToFile(fileNameDists, diagramNumber, 1.1);
-}
-
-void writeEstimationCoefficientsAndDistances(const char *fileNameCoefs, const char *fileNameDists)
+void writeEstimationCoefficientsAndDistances(const char *fileNameCoefs, const char *fileNameDists, size_t checkedNeighbours)
 {
   cout << "Estimation and distances for random diagrm.\n";
   cout << "Cells number for random diagram: ";
@@ -232,7 +227,7 @@ void writeEstimationCoefficientsAndDistances(const char *fileNameCoefs, const ch
 
   size_t diagramNumber = getSmallUniformlyRandomDiagram(cellsNum);
   cout << "Diagram number is " << diagramNumber << endl;
-  writeEstimationCoefficientsAndDistances(fileNameCoefs, fileNameDists, diagramNumber);
+  writeEstimationCoefficientsAndDistances(fileNameCoefs, fileNameDists, diagramNumber, checkedNeighbours);
 }
 
 void readFromFileAndPrintDiagram3DNumber(const char *fileName)
@@ -255,12 +250,12 @@ void printRandomDiagram3DHooks()
   start = std::chrono::system_clock::now();
   YungDiagram3D *d = YungDiagram3DHandler::getRandomWalkDiagramFast(HOOKS, n);
   end = std::chrono::system_clock::now();
-  int elapsed_seconds = std::chrono::duration_cast<std::chrono::seconds>
+  size_t elapsed_seconds = std::chrono::duration_cast<std::chrono::seconds>
                              (end-start).count();
 
   //d->printToConsole();
   cout << "elapsed time: " << elapsed_seconds << "s\n";
-  d->saveToFile("3dHooksRandomFast2.txt");
+  d->saveToFile("3dHooksRandomFast1000000.txt");
 }
 
 void countTimeForRandom3D()
@@ -339,13 +334,13 @@ int main(void)
   //writeKantorovichBallToFile("AllDistances20.txt");
   //printDiagramsInCycle();
   //writeKantorovichEstimationCoefs("EstimationCoefs.txt");
-  //writeEstimationCoefficientsAndDistances("EstimationCoefs.txt", "EstimationDistances.txt", 2223);
+  //writeEstimationCoefficientsAndDistances("EstimationCoefsFabs1.txt", "EstimationDistancesFabs1.txt", 200);
 
   //****************3D diagrams**********************************************/
   //printDiagrams3DInCycle();
   //readFromFileAndPrintDiagram3DNumber("3D.txt");
-  //printRandomDiagram3DHooks();
-  countTimeForRandom3D();
+  printRandomDiagram3DHooks();
+  //countTimeForRandom3D();
   
   int dummy = 0;
 

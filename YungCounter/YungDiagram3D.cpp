@@ -362,6 +362,8 @@ YungDiagram3D *YungDiagram3DHandler::getRandomWalkDiagramFast(ProcessType3D type
   case HOOKS:
     for (size_t i = 1; i < cellsNumber; i++)
     {
+      if ((i - 1) % 1000 == 0)
+        cout << i << "-cells diagram is generated.\n";
       vector<double> probs;
       vector<ind_pair> newPoints;
       for (size_t j = 0; j <= d->m_rowsY.size(); j++) // less or equal!

@@ -114,7 +114,8 @@ saveas(gcf, 'DiagramsDists20.jpg');
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Coefficients estimation
-A = load('EstimationCoefs.txt');
+figure;
+A = load('EstimationCoefsFabs1.txt');
 c = A(1, :);
 X = A(2:end,:);
 y = X * c';
@@ -123,24 +124,25 @@ plot(x, y, '*b');
 min(y)
 grid on;
 hold on;
-B = load('EstimationDistances.txt');
+B = load('EstimationDistancesFabs1.txt');
 Y = B(:, 2);
 plot(x, Y, '*r');
 legend('Estimation', 'Real distances');
-set(gcf, 'InvertHardCopy', 'off');
-saveas(gcf, 'MetricEstimation20.jpg');
+%set(gcf, 'InvertHardCopy', 'off');
+%saveas(gcf, 'MetricEstimation20Fabs.jpg');
 hold off;
 
+figure;
 x = 1:1:size(c, 2);
 plot(x, c, '*b');
 grid on;
 legend('ќценка c(i)');
-set(gcf, 'InvertHardCopy', 'off');
-saveas(gcf, 'CoefficientsEstimation20.jpg');
+%set(gcf, 'InvertHardCopy', 'off');
+%saveas(gcf, 'CoefficientsEstimation20Fabs.jpg');
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%5
 % 3d assymptotic shape
-A = importdata('3dHooksRandomFast.txt');
+A = importdata('3dHooksRandomFast1000000.txt');
 A(isnan(A)) = 0;
 figure;
 %A = A .* 100;
@@ -164,7 +166,107 @@ colorbar
 set(gcf, 'InvertHardCopy', 'off');
 saveas(gcf, '3DHooks100000.jpg');
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% 3D hooks asymptotic function
+umax = 2 / sqrt(3);
+sqrumax = umax * umax;
+x = zeros(10000, 1);
+y = zeros(10000, 1);
+z = zeros(10000, 1);
+ind = 1;
+const = 2 / pi;
+for u = 0 : 0.05 : 2 / umax
+    sqru = u * u;
+    for v = 0 : 0.05 : sqrt(sqrumax - sqru)
+        sqrv = v * v;
+        for w = 0 : 0.05 : sqrt(sqrumax - sqru - sqrv)
+            x(ind) = (v - w) / umax;
+            y(ind) = u - 0.5 * (v + w);
+            sumsqr = sqru + sqrv + w * w;
+            z(ind) = const * (u * asin(u / umax) + v * asin(v / umax) + w * asin(w / umax));
+            ind = ind + 1;
+        end
+    end
+end;
+plot3(x,y,z,'o');
+grid on;
+hold on;
 
+ind = 1;
+clearvars x y z;
+lambda = 2;
+f = 2/ pi * (lambda * asin(lambda / 2) + sqrt(4 - lambda * lambda));
+for u = 0 : 0.05 : 4 / sqrt(3)
+    while f - lambda < sqrt(3) * u
+        lambda = lambda - 0.001;
+        f = 2/ pi * (lambda * asin(lambda / 2) + sqrt(4 - lambda * lambda));
+    end
+    
+    vmax = (lambda + f) / sqrt(3);
+    for v = 0 : 0.05 : vmax
+        %u = (f - 3 * lambda) / sqrt(12) + v / 2;
+        lambda1 = 2;
+        f1 = 2/ pi * (lambda1 * asin(lambda1 / 2) + sqrt(4 - lambda1 * lambda1));
+        while f1 - lambda1 > v * sqrt(3)
+            lambda1 = lambda1 - 0.001;
+            f1 = 2/ pi * (lambda1 * asin(lambda1 / 2) + sqrt(4 - lambda1 * lambda1));
+        end
+        umax = (f1 - 3 * lambda1) / sqrt(12) + v / 2;
+        const = 2 * sqrt(6) * f / (pi * (vmax + umax) * 3);%9 * sqrt(3) / (8 * pi);%a;%
+        if (umax < 0)
+            continue;
+        x1 = v * sqrt(3) / 2;
+        y1 = u - v / 2;
+        z1 = const * (v * asin(v / vmax) + u * asin(u / umax) + sqrt(vmax * vmax - v * v) + sqrt(umax * umax - u * u));
+        if z1 < 10
+%             prevInd = -1;
+%             for ind1 = 1 : 1 : ind - 1
+%                 if (x(ind1) == x1 && y(ind1) == y1)
+%                     prevInd = ind1;
+%                     break;
+%                 end
+%             end
+%             if (prevInd == -1)
+            x(ind) = x1;
+            y(ind) = y1;
+            z(ind) = z1;
+            ind = ind + 1;
+%             elseif (z(prevInd) < z1)
+%                 z(prevInd) = z1;
+%             end
+        end
+    end
+end
+plot3(x,y,z,'o');
+grid on;
+hold on;
+
+
+A = importdata('3dHooksRandomFast1000000.txt');
+A(isnan(A)) = 0;
+ind = 1;
+s = 1000000 ^ (-1/3);
+clearvars x y z;
+for i = 1 : 1: size(A, 1)
+    for j = 1 : 1: size(A, 2)
+        x1 = i * s;
+        y1 = j * s;
+        z1 = A(i, j) * s;
+        
+        if (z1 ~= 0)
+            x(ind) = (x1 - y1) / sqrt(2);
+            y(ind) = (2 * z1 - x1 - y1) / sqrt(6);
+            z(ind) = (x1 + y1 + z1) / sqrt(3);
+            ind = ind + 1;
+        end
+    end;
+end
+plot3(x,y,z,'r*');
+grid on;
+
+min(z) - 9/(pi*pi)
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% time for 3D hooks
 x = ones(size(A, 1) * size(A, 2), 1);
 y = ones(size(A, 1) * size(A, 2), 1);
 z = ones(size(A, 1) * size(A, 2), 1);
@@ -205,4 +307,5 @@ grid on;
 set(gcf, 'InvertHardCopy', 'off');
 saveas(gcf, 'AssymptHooksTime.jpg');
 
-polyval(coeff, 100000);
+polyval(coeff, 1000000)
+
