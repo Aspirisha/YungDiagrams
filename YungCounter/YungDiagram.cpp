@@ -1228,7 +1228,7 @@ void YungDiagramHandler::getLinearCoefficientsEstimationKantorovich(size_t diagr
     }
   }
 
-  delta.resize(diagrams.size(), cellsNum);
+  delta.resize(diagrams.size(), cellsNum * 2);
   for (size_t ind = 0; ind < diagrams.size(); ind++)
   {
     YungDiagram d1(diagrams[ind]);
@@ -1244,6 +1244,13 @@ void YungDiagramHandler::getLinearCoefficientsEstimationKantorovich(size_t diagr
     }
     for (size_t j = h - 1; j < rows.size(); j++)
       delta(ind, j) = rows[j];
+
+    for (size_t j = cellsNum; j < d1.m_cols.size() + cellsNum; j++)
+      delta(ind, j) = d1.m_cols[j - cellsNum];
+
+    for (size_t j = cellsNum; j < d.m_cols.size() + cellsNum; j++)
+      delta(ind, j) = fabs(delta(ind, j) - d.m_cols[j - cellsNum]);
+
   }
 
 

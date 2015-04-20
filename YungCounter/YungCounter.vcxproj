@@ -65,6 +65,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="BratelliDiagram.cpp" />
     <ClCompile Include="gaussolver.cpp" />
     <ClCompile Include="ioInterface.cpp" />
     <ClCompile Include="LinearProblemSolver.cpp" />
@@ -73,6 +74,7 @@
     <ClCompile Include="YungDiagram3D.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="BratelliDiagram.h" />
     <ClInclude Include="gaussolver.h" />
     <ClInclude Include="globaldefinitions.h" />
     <ClInclude Include="ioInterface.h" />

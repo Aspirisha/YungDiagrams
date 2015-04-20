@@ -5,6 +5,7 @@
 #include <limits>
 #include "YungDiagram.h"
 #include "YungDiagram3D.h"
+#include "BratelliDiagram.h"
 
 using namespace std;
 #define _CRT_SECURE_NO_WARNINGS
@@ -202,7 +203,7 @@ void writeEstimationCoefficientsAndDistances(const char *fileNameCoefs, const ch
 
   for (size_t i = 0; i < deltas.size1(); i++)
   {
-    for (size_t j = 0; j < cellsNum; j++)
+    for (size_t j = 0; j < 2 * cellsNum; j++)
     {
       out << ceil(deltas(i, j)) << " ";
     }
@@ -255,7 +256,7 @@ void printRandomDiagram3DHooks()
 
   //d->printToConsole();
   cout << "elapsed time: " << elapsed_seconds << "s\n";
-  d->saveToFile("3dHooksRandomFast1000000.txt");
+  d->saveToFile("3dHooksRandomFast.txt");
 }
 
 void countTimeForRandom3D()
@@ -331,17 +332,29 @@ int main(void)
   //countDistanceBetweenRandomDiagrams(RICHARDSON, 10);
   //countAllDistancesOnLevel(10, "distances.txt");
   //countDistanceBetweenUniformlyRandomDiagrams();
-  //writeKantorovichBallToFile("AllDistances20.txt");
+  //YungDiagram *d = YungDiagramHandler::getRandomDiagram(PLANSHEREL, 20);
+  //writeKantorovichBallToFile("BallRandomPlansherel20_Radius_0_1.txt", d->GetDiagramNumber()._get_digit(0), 0.05);
+  //writeKantorovichBallToFile("AllDistances20.txt", d->GetDiagramNumber()._get_digit(0), 1.1);
+  //writeKantorovichBallToFile("AllDistances20FromLine.txt", YungDiagramHandler::GetFirstNumberWithNCells(20)._get_digit(0), 1.1);
   //printDiagramsInCycle();
   //writeKantorovichEstimationCoefs("EstimationCoefs.txt");
-  //writeEstimationCoefficientsAndDistances("EstimationCoefsFabs1.txt", "EstimationDistancesFabs1.txt", 200);
+  //writeEstimationCoefficientsAndDistances("EstimationCoefsFabs_35.txt", "EstimationDistancesFabs_35.txt", 30);
 
   //****************3D diagrams**********************************************/
   //printDiagrams3DInCycle();
   //readFromFileAndPrintDiagram3DNumber("3D.txt");
-  printRandomDiagram3DHooks();
+  //printRandomDiagram3DHooks();
   //countTimeForRandom3D();
   
+  /************************ Bratelli diagrams *****************************************/
+  PascalGraph pg;
+
+  int node1 = 0;
+  int node2 = 7;
+  int level = 10;
+  cout << "dist(" << node1 << ", " << node2 << ") = " << pg.countDistance(level, node1, node2);
+
+
   int dummy = 0;
 
 
