@@ -57,6 +57,8 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
+      <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
+      <OpenMPSupport>true</OpenMPSupport>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
@@ -65,20 +67,28 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="2DInterface.cpp" />
+    <ClCompile Include="3DInterface.cpp" />
+    <ClCompile Include="StrictYoungDiagram2D.cpp" />
     <ClCompile Include="BratelliDiagram.cpp" />
     <ClCompile Include="gaussolver.cpp" />
     <ClCompile Include="ioInterface.cpp" />
     <ClCompile Include="LinearProblemSolver.cpp" />
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="StrictYoungGraph.cpp" />
     <ClCompile Include="YungDiagram.cpp" />
     <ClCompile Include="YungDiagram3D.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="2DInterface.h" />
+    <ClInclude Include="StrictYoungDiagram2D.h" />
+    <ClInclude Include="3DInterface.h" />
     <ClInclude Include="BratelliDiagram.h" />
     <ClInclude Include="gaussolver.h" />
     <ClInclude Include="globaldefinitions.h" />
     <ClInclude Include="ioInterface.h" />
     <ClInclude Include="LinearProblemSolver.h" />
+    <ClInclude Include="StrictYoungGraph.h" />
     <ClInclude Include="YungDiagram.h" />
     <ClInclude Include="YungDiagram3D.h" />
   </ItemGroup>

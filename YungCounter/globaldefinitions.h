@@ -13,7 +13,6 @@ typedef boost::numeric::ublas::matrix<char> cMatrix;
 typedef boost::numeric::ublas::vector<double> dVector;
 typedef std::vector<double> line;
 typedef enum {EXTRA_SUPPLIER = 1, EXTRA_PUCRHASER, NO_EXTRAS} extraType;
-typedef std::pair<size_t, size_t> num_pair;
 
 const int max_dimension = 21;
 const double machine_zero = 1e-13;

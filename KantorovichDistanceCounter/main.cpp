@@ -3,6 +3,8 @@
 
 using namespace std;
 
+typedef std::pair<size_t, size_t> num_pair;
+
 int main()
 {
   map<num_pair, double> vertDists;

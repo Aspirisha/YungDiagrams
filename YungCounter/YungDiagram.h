@@ -4,7 +4,7 @@
 
 enum ProcessType 
 {
-  RICHARDSON,
+  RICHARDSON = 0,
   ALPHA,
   BETA,
   PLANSHEREL,
@@ -27,11 +27,12 @@ public:
 
   size_t getAncestorsNumber();
   size_t *getAncestors() {return m_ancestors; }
-  void setColsNumber(size_t colsNumber);
   void setCellsInCol(size_t colIndex, size_t cellsNumber);
   size_t getColsNumber() { return m_cols.size(); }
   size_t getCellsNumber() { return m_cellsNumber; }
   void resetProbability() {m_probability = 0;}
+
+  bool isStrict() const;
 
   bool addCell(size_t col);
   long double m_probability; // to boost up it's public

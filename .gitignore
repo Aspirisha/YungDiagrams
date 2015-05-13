@@ -19,4 +19,8 @@
 *.dll_suf
 *.obj
 *.exp
+*.gz
+*.aux
+Grant*
+*.asv
 Framework/*

@@ -22,6 +22,8 @@ const int YungDiagramHandler::maxCellsNumber = 600;
 double YungDiagramHandler::s_alpha = 0.16;
 double YungDiagramHandler::s_gamma = -0.5;
 
+typedef std::pair<size_t, size_t> num_pair;
+
 YungDiagram::YungDiagram() : m_cellsNumber(1), m_numberIsCounted(true), 
   m_number(1), m_probability(1), m_ancestorsNumber(0), m_ancestors(0), m_ancestorsAreCounted(false), m_ancestorsColDifferent(0)
 {
@@ -289,19 +291,6 @@ boost::xint::integer YungDiagramHandler::GetFirstNumberWithNPlusOneCells(size_t 
   return d.GetDiagramNumber();
 }
 
-void YungDiagram::setColsNumber(size_t colsNumber)
-{
-  if (m_ancestorsAreCounted)
-  {
-    delete[] m_ancestors;
-    m_probability = 0;
-    m_ancestorsAreCounted = false;
-  }
-  m_cols.resize(colsNumber);
-  for (size_t &col : m_cols) // Test how it works !!!!!!!!!!!!!!!!!!!!!!!!!
-    col = 0;
-}
-
 void YungDiagram::setCellsInCol(size_t colIndex, size_t cellsNumber)
 {
   if (m_ancestorsAreCounted)
@@ -346,6 +335,16 @@ void YungDiagram::resetAncestors()
   m_ancestors = 0;
   m_ancestorsNumber = 0;
   m_ancestorsColDifferent.clear();
+}
+
+bool YungDiagram::isStrict() const
+{
+  for (int i = 0; i < m_cols.size() - 1; i++)
+  {
+    if (m_cols[i] == m_cols[i + 1])
+      return false;
+  }
+  return true;
 }
 
 void YungDiagramHandler::CountProbabilities(ProcessType processType, size_t cellsNumber)
@@ -630,7 +629,6 @@ YungDiagram *YungDiagramHandler::getRandomDiagram(ProcessType procType, size_t n
           width++;
         }
         
-        newProb *= (i + 1); // here in fact we don't need *(i + 1) for it's the same for all ancestors
         probs.push_back(newProb);
       }
       size_t j = 0;

@@ -148,7 +148,8 @@ legend('ќценка c(i)');
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%5
 % 3d assymptotic shape
-A = importdata('3dHooksRandomFast1000000.txt');
+%A = importdata('3dHooksRandomFast1000000.txt');
+A = importdata('powers_2.51.txt');
 A(isnan(A)) = 0;
 figure;
 %A = A .* 100;
@@ -214,38 +215,67 @@ for i = 1 : 1: size(A, 1)
         end
     end;
 end
-plot3(x,y,z,'r*');
-grid on;
-
+%plot3(x,y,z,'r*');
+%grid on;
+%hold on
 min(z) - 9/(pi*pi)
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% time for 3D hooks
-x = ones(size(A, 1) * size(A, 2), 1);
-y = ones(size(A, 1) * size(A, 2), 1);
-z = ones(size(A, 1) * size(A, 2), 1);
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% 3D hooks powers difference
+% 1. to run it, first evaluate previous part
+% 2. now evaluate bellow part
+x = x';
+y = y';
+z = z';
+
+figure;
+F = TriScatteredInterp(x, y, z);
+F(0,0)
+ti = -4:0.1:4;
+[qx,qy] = meshgrid(ti,ti);
+qz = F(qx,qy);
+mesh(qx,qy,qz);
+hold on
+plot3(x,y,z,'r*');
+
+A = importdata('powers_-0.01.txt');
+A(isnan(A)) = 0;
 ind = 1;
-for i = 1 : 1 : size(A, 1)
-    for j = 1: 1 : size(A, 2);
-        if (A(i, j) ~= 0)
-            x(ind) = i;
-            y(ind) = j;
-            z(ind) = A(i, j);
+s = 100000 ^ (-1/3);
+clearvars x y z;
+delta = zeros(size(A, 2) * size(A, 1), 1);
+maxDelta = 0;
+for i = 1 : 1: size(A, 1)
+    for j = 1 : 1: size(A, 2)
+        x1 = i * s;
+        y1 = j * s;
+        z1 = A(i, j) * s;
+        
+        if (z1 ~= 0)
+            x(ind) = (x1 - y1) / sqrt(2);
+            y(ind) = (2 * z1 - x1 - y1) / sqrt(6);
+            z(ind) = (x1 + y1 + z1) / sqrt(3);
+            delta(ind) = F(x(ind), y(ind)) - z(ind);
+            if (maxDelta < abs(delta(ind)))
+                maxDelta = abs(delta(ind));
+            end
             ind = ind + 1;
         end
-    end
+    end;
 end
 ind = ind - 1;
 x = x(1:ind);
 y = y(1:ind);
-z = z(1:ind);
+delta = delta(1:ind);
+%plot3(x,y,z,'b*');
+plot3(x,y,delta,'bo');
+plot3(0,0,9/(pi*pi), 'bo');
+set(gcf, 'InvertHardCopy', 'off');
+saveas(gcf, 'AssymptoticDifferencePowers.jpg');
 
-figure;
-F = TriScatteredInterp(x, y, z);
-ti = 0:0.1:135;
-[qx,qy] = meshgrid(ti,ti);
-qz = F(qx,qy);
-mesh(qx,qy,qz);
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% time for 3D hooks
 t = load('3dtime.txt');
 x = t(:, 1);
 y = t(:, 2);
