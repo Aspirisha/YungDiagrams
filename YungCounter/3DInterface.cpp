@@ -143,7 +143,7 @@ void printDiagrams3DInCycle()
 {
   cout << "Insert diagrams numbers to print until you're done. To exit insert 0.\n";
 
-  boost::xint::integer num = 0;
+  mpz_int num(0);
   while (true)
   {
     cout << "Diagram number: ";
@@ -157,7 +157,7 @@ void printDiagrams3DInCycle()
     }
     
 
-    if (num == 0)
+    if (num.is_zero())
       break;
 
     YungDiagram3D d(num);

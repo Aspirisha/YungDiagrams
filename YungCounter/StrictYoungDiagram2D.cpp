@@ -1,9 +1,11 @@
 #include "StrictYoungDiagram2D.h"
 #include <iostream>
+#include <fstream>
+#include <algorithm>
 
 using namespace std;
 
-std::map<std::pair<size_t, size_t>, boost::xint::integer> StrictYoungDiagram2D::partitionsAmount; 
+std::map<std::pair<size_t, size_t>, uint64_t> StrictYoungDiagram2D::partitionsAmount; 
 bool StrictYoungDiagram2D::partitionsCounted = false;
 
 StrictYoungDiagram2D::StrictYoungDiagram2D() : m_cellsNumber(1), m_numberIsCounted(true), m_number(1)
@@ -36,7 +38,7 @@ StrictYoungDiagram2D::StrictYoungDiagram2D(const string &fileName) : m_cellsNumb
   }
 }
 
-StrictYoungDiagram2D::StrictYoungDiagram2D(const boost::xint::integer &number) :  m_cellsNumber(0), m_numberIsCounted(true), m_number(0)
+StrictYoungDiagram2D::StrictYoungDiagram2D(const uint64_t &number) :  m_cellsNumber(0), m_numberIsCounted(true), m_number(0)
 {
   if (!partitionsCounted)
     CountPartitionsAmount();
@@ -61,7 +63,7 @@ StrictYoungDiagram2D::StrictYoungDiagram2D(const boost::xint::integer &number) :
 
   while (n)
   {
-    boost::xint::integer tmp = m_number + partitionsAmount[make_pair(n - colSize, min(colSize - 1, n - colSize))]; // with max k'th col less than current
+    uint64_t tmp = m_number + partitionsAmount[make_pair(n - colSize, min(colSize - 1, n - colSize))]; // with max k'th col less than current
     if (tmp >= number)
     {
       m_number += partitionsAmount[make_pair(n - colSize - 1, min(colSize - 2, n - colSize - 1))]; // O(n)

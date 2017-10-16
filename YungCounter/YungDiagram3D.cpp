@@ -14,7 +14,7 @@ std::vector<size_t> YungDiagram3DHandler::primes;
 std::map<ind_pair, size_t> YungDiagram3DHandler::primesToCells;
 bool YungDiagram3DHandler::primesAreCounted = false;
 
-typedef std::pair<boost::xint::integer, boost::xint::integer> num_pair;
+typedef std::pair<mpz_int, mpz_int> num_pair;
 
 YungDiagram3D::~YungDiagram3D()
 {
@@ -24,19 +24,19 @@ YungDiagram3D::YungDiagram3D()
 {
   m_cols.insert(col_element(ind_pair(0, 0), 1));
   m_cellsNumber = 1;
-  m_number = 1;
+  m_number.assign(1);
   m_rowsY.push_back(1);
   m_numberIsCounted = true;
 }
 
-YungDiagram3D::YungDiagram3D(const boost::xint::integer &number)
+YungDiagram3D::YungDiagram3D(const mpz_int &number)
 {
   if (YungDiagram3DHandler::arePrimesCounted() == false)
     YungDiagram3DHandler::countPrimes();
 
   m_number = number;
   int y = YungDiagram3DHandler::maxCellsNumber - 1;
-  size_t prime = YungDiagram3DHandler::primesToCells[ind_pair(0, y)];
+  mpz_int prime = mpz_int::number(YungDiagram3DHandler::primesToCells[ind_pair(0, y)]);
   ++m_number;
   m_cellsNumber = 0;
 
@@ -53,8 +53,8 @@ YungDiagram3D::YungDiagram3D(const boost::xint::integer &number)
       b = m_cols[ind_pair(j + 1, y)];
       size_t h = max<>(a, b);
 
-      prime = YungDiagram3DHandler::primesToCells[ind_pair(j, y)];
-      while (m_number % prime == 0)
+      prime = mpz_int::number(YungDiagram3DHandler::primesToCells[ind_pair(j, y)]);
+      while (mpz_int::number(m_number % prime).is_zero())
       {
         m_number /= prime;
         h++;
@@ -67,10 +67,11 @@ YungDiagram3D::YungDiagram3D(const boost::xint::integer &number)
     }
   }
 
-  if (m_number > 1)
+
+  if (m_number > mpz_int::number(1))
   {
     cerr << "Number contains too big prime factor. Unable to create such diagram.\n";
-    m_number = 1;
+    m_number = mpz_int::number(1);
     m_cellsNumber = 1;
     m_cols.clear();
     m_cols[ind_pair(0, 0)] = 1;
@@ -94,7 +95,7 @@ YungDiagram3D::YungDiagram3D(const boost::xint::integer &number)
   m_number = number;
 }
 
-boost::xint::integer YungDiagram3D::GetDiagramNumber(bool forceRecount)
+mpz_int YungDiagram3D::GetDiagramNumber(bool forceRecount)
 {
   if (m_numberIsCounted && !forceRecount)
     return m_number;
@@ -102,15 +103,15 @@ boost::xint::integer YungDiagram3D::GetDiagramNumber(bool forceRecount)
   if (YungDiagram3DHandler::arePrimesCounted() == false)
     YungDiagram3DHandler::countPrimes();
 
-  m_number = boost::xint::integer(1);
+  m_number = mpz_int(1);
   for (size_t i = 0; i < m_rowsY.size(); i++)
   {
     for (size_t j = 0; j < m_rowsY[i]; j++)
     {
       size_t delta_h = m_cols[ind_pair(i, j)] - max<>(m_cols[ind_pair(i + 1, j)], m_cols[ind_pair(i, j + 1)]);
 
-      boost::xint::integer power = boost::xint::pow(YungDiagram3DHandler::primesToCells[ind_pair(i, j)], 
-        boost::xint::integer(delta_h));
+      mpz_int power = boost::multiprecision::pow(mpz_int(YungDiagram3DHandler::primesToCells[ind_pair(i, j)]),
+        delta_h);
       m_number *= power;
     }
   }
@@ -381,16 +382,16 @@ bool YungDiagram3D::canRemoveCell(size_t x, size_t y) const
   return canRemoveCell;
 }
 
-void YungDiagram3D::getPredeccessors(std::map<boost::xint::integer, vector<boost::xint::integer> > &predeccessors,
-    std::map<boost::xint::integer, vector<ind_pair> > &dif_cells)
+void YungDiagram3D::getPredeccessors(std::map<mpz_int, vector<mpz_int> > &predeccessors,
+    std::map<mpz_int, vector<ind_pair> > &dif_cells)
 {
   if (!m_numberIsCounted)
     GetDiagramNumber();
 
-  predeccessors[m_number] = vector<boost::xint::integer>();
+  predeccessors[m_number] = vector<mpz_int>();
   dif_cells[m_number] = vector<ind_pair>();
 
-  boost::xint::integer cached_number = m_number;
+  mpz_int cached_number = m_number;
 
   size_t colsNumber = m_cols.size();
   m_cellsNumber--;
@@ -415,7 +416,7 @@ void YungDiagram3D::getPredeccessors(std::map<boost::xint::integer, vector<boost
           resizeType = 2;
         }
       }
-      boost::xint::integer num = GetDiagramNumber(true);
+      mpz_int num = GetDiagramNumber(true);
       predeccessors[cached_number].push_back(num);
       dif_cells[cached_number].push_back(ind_pair(k, l));
 
@@ -558,10 +559,10 @@ YungDiagram3D *YungDiagram3DHandler::getRandomWalkDiagramFast(YungDiagram3D::Pro
   return d;
 }
 
-void YungDiagram3DHandler::countCoefficientsForKantorovichMetric(boost::xint::integer diagramNum, 
-  map<boost::xint::integer, double> &probs, dVector &c, 
-  map<boost::xint::integer, vector<boost::xint::integer> > &preds,  map<boost::xint::integer, vector<ind_pair> > &dif_cells,
-  map<boost::xint::integer, double> &newProbs)
+void YungDiagram3DHandler::countCoefficientsForKantorovichMetric(mpz_int diagramNum, 
+  map<mpz_int, double> &probs, dVector &c, 
+  map<mpz_int, vector<mpz_int> > &preds,  map<mpz_int, vector<ind_pair> > &dif_cells,
+  map<mpz_int, double> &newProbs)
 {
   size_t predsNum = preds[diagramNum].size();
   c.resize(predsNum);
@@ -569,7 +570,7 @@ void YungDiagram3DHandler::countCoefficientsForKantorovichMetric(boost::xint::in
 
   for (int i = 0; i < predsNum; i++)
   {
-    boost::xint::integer predNum = preds[diagramNum][i];
+    mpz_int predNum = preds[diagramNum][i];
     YungDiagram3D d(predNum);
     double weight = d.countTransitiveProb(dif_cells[diagramNum][i].first + 1, dif_cells[diagramNum][i].second + 1);
     double sumWeights = 0;
@@ -596,11 +597,11 @@ void YungDiagram3DHandler::countCoefficientsForKantorovichMetric(boost::xint::in
 
 double YungDiagram3DHandler::countDistance(YungDiagram3D &d1, YungDiagram3D &d2)
 {
-  vector<boost::xint::integer> neededDiagrams;
+  vector<mpz_int> neededDiagrams;
   vector<size_t> numbersOfNeededDiagramsOnLevel;
   vector<char> ancestorFlags; 
-  map<boost::xint::integer, vector<boost::xint::integer> >predeccessors;
-  map<boost::xint::integer, vector<ind_pair> > dif_cells;
+  map<mpz_int, vector<mpz_int> >predeccessors;
+  map<mpz_int, vector<ind_pair> > dif_cells;
 
   // probably we don't need to count distance between diagrams that are predecessors of the same diagram from
   // te top level. If it's predecessor of first one, it has first bit to be 1, if of the second - then second bit to be 1.
@@ -626,12 +627,12 @@ double YungDiagram3DHandler::countDistance(YungDiagram3D &d1, YungDiagram3D &d2)
       YungDiagram3D d(neededDiagrams[j]);
       d.getPredeccessors(predeccessors, dif_cells);
 
-      for (boost::xint::integer num : predeccessors[neededDiagrams[j]])
+      for (mpz_int num : predeccessors[neededDiagrams[j]])
       {
-        vector<boost::xint::integer>::iterator iter;
+        vector<mpz_int>::iterator iter;
         if ((iter = std::find(neededDiagrams.begin(), neededDiagrams.end(), num)) == neededDiagrams.end())
         {
-          if (num > 4)
+          if (num > mpz_int(4))
           {
             neededDiagrams.push_back(num);
             neededDiagramsNumberOnLevel++;
@@ -653,12 +654,12 @@ double YungDiagram3DHandler::countDistance(YungDiagram3D &d1, YungDiagram3D &d2)
   }
 
   map<num_pair, double> distances; // key is pair of diagram numbers, first number is less than second.
-  map<boost::xint::integer, double> probs;
+  map<mpz_int, double> probs;
 
   distances.insert(pair<num_pair, double>(pair<size_t, size_t>(2, 4), 1.0));
   distances.insert(pair<num_pair, double>(pair<size_t, size_t>(2, 3), 1.0));
   distances.insert(pair<num_pair, double>(pair<size_t, size_t>(3, 4), 1.0));
-  probs[2] = probs[3] = probs[4] = 1.0 / 3;
+  probs[mpz_int(2)] = probs[mpz_int(3)] = probs[mpz_int(4)] = 1.0 / 3;
 
   endIndexInVector = neededDiagrams.size() - 1;
   size_t solvedTranspProblems = 0;
@@ -669,7 +670,7 @@ double YungDiagram3DHandler::countDistance(YungDiagram3D &d1, YungDiagram3D &d2)
     startIndexInVector = endIndexInVector - numbersOfNeededDiagramsOnLevel[levelIndex] + 1;
 
     // last is not needed for it's distances will be counted during previous steps
-    map<boost::xint::integer, double> newProbs;
+    map<mpz_int, double> newProbs;
     for (int j = startIndexInVector; j < endIndexInVector; j++)
     {
       dVector c1; 
@@ -691,10 +692,10 @@ double YungDiagram3DHandler::countDistance(YungDiagram3D &d1, YungDiagram3D &d2)
         dMatrix x(s1, s2);
         for (size_t l = 0; l < s1; l++)
         {
-          boost::xint::integer d1 = predeccessors[neededDiagrams[j]][l];
+          mpz_int d1 = predeccessors[neededDiagrams[j]][l];
           for (size_t p = 0; p < s2; p++)
           {
-            boost::xint::integer d2 = predeccessors[neededDiagrams[k]][p];
+            mpz_int d2 = predeccessors[neededDiagrams[k]][p];
 
             if (d1 == d2)
               costs(l, p) = 0;

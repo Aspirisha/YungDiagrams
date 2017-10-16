@@ -94,8 +94,8 @@ double StrictYoungGraph::countDistance(YungDiagram &d1, YungDiagram &d2)
   // BUT, IF it turns out that this diagram is predecessor for both of top level diagrams,
   // we should count it's flag to be 3 - bits for both
 
-  neededDiagrams.push_back(d1.GetDiagramNumber()._get_digit(0));
-  neededDiagrams.push_back(d2.GetDiagramNumber()._get_digit(0));
+  neededDiagrams.push_back(d1.GetDiagramNumber());
+  neededDiagrams.push_back(d2.GetDiagramNumber());
   ancestorFlags.push_back(1);
   ancestorFlags.push_back(2);
 

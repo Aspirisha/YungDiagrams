@@ -1,4 +1,5 @@
 #include <iostream>
+#include <fstream>
 #include <random>
 #include <chrono>
 #include <string>
@@ -29,8 +30,8 @@ size_t getSmallUniformlyRandomDiagram(size_t cellsNum)
 {
   size_t seed = (size_t)std::chrono::system_clock::now().time_since_epoch().count();
   std::default_random_engine generator(seed);
-  size_t n1 = YungDiagramHandler::GetFirstNumberWithNCells(cellsNum)._get_digit(0);
-  size_t n2 = YungDiagramHandler::GetLastNumberWithNCells(cellsNum)._get_digit(0);
+  size_t n1 = YungDiagramHandler::GetFirstNumberWithNCells(cellsNum);
+  size_t n2 = YungDiagramHandler::GetLastNumberWithNCells(cellsNum);
   std::uniform_int_distribution<int> distribution(n1, n2);
   size_t d1 = distribution(generator);
 
@@ -46,8 +47,8 @@ void countDistanceBetweenUniformlyRandomDiagrams()
   size_t seed = (size_t)std::chrono::system_clock::now().time_since_epoch().count();
   std::default_random_engine generator(seed);
 
-  size_t n1 = YungDiagramHandler::GetFirstNumberWithNCells(cellsNum)._get_digit(0);
-  size_t n2 = YungDiagramHandler::GetLastNumberWithNCells(cellsNum)._get_digit(0);
+  size_t n1 = YungDiagramHandler::GetFirstNumberWithNCells(cellsNum);
+  size_t n2 = YungDiagramHandler::GetLastNumberWithNCells(cellsNum);
 
   std::uniform_int_distribution<int> distribution(n1, n2);
   size_t d1 = distribution(generator);
@@ -187,8 +188,8 @@ void countAllDistancesOnLevel()
   cout << "Insert file name where to store distances: ";
   cin >> fileName;
 
-  size_t n1 = YungDiagramHandler::GetFirstNumberWithNPlusOneCells(level - 1)._get_digit(0) - 1;
-  size_t n2 = YungDiagramHandler::GetFirstNumberWithNPlusOneCells(level)._get_digit(0) - 1;
+  size_t n1 = YungDiagramHandler::GetFirstNumberWithNPlusOneCells(level - 1) - 1;
+  size_t n2 = YungDiagramHandler::GetFirstNumberWithNPlusOneCells(level) - 1;
   
   ofstream out(fileName);
   out.precision(15);
@@ -216,8 +217,8 @@ void countAllStrictDistancesOnLevel()
   cout << "Insert file name where to store distances: ";
   cin >> fileName;
 
-  size_t n1 = YungDiagramHandler::GetFirstNumberWithNPlusOneCells(level - 1)._get_digit(0) - 1;
-  size_t n2 = YungDiagramHandler::GetFirstNumberWithNPlusOneCells(level)._get_digit(0) - 1;
+  size_t n1 = YungDiagramHandler::GetFirstNumberWithNPlusOneCells(level - 1) - 1;
+  size_t n2 = YungDiagramHandler::GetFirstNumberWithNPlusOneCells(level) - 1;
   
   ofstream out(fileName);
   out.precision(15);

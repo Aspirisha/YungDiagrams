@@ -1,5 +1,4 @@
 #pragma once
-#include <boost\xint\xint.hpp>
 #include "globaldefinitions.h"
 
 enum ProcessType 
@@ -16,10 +15,10 @@ class YungDiagram
 public:
   YungDiagram();
   explicit YungDiagram(const std::string &fileName);
-  explicit YungDiagram(const boost::xint::integer &number);
+  explicit YungDiagram(uint64_t number);
   ~YungDiagram();
   void SaveToFile(const char *fileName) const;
-  boost::xint::integer GetDiagramNumber() const;
+  uint64_t GetDiagramNumber() const;
   double GetMyProbabilityRichardson();
   void SetMyProbability(long double probability) { m_probability = probability; }
   void countAncestors();
@@ -46,16 +45,16 @@ public:
 
   size_t m_cellsNumber;
   std::vector<size_t> m_cols;
-  mutable boost::xint::integer m_number;
+  mutable uint64_t m_number;
   mutable bool m_numberIsCounted;
 };
 
 class YungDiagramHandler
 {
 public:
-  static boost::xint::integer GetFirstNumberWithNPlusOneCells(size_t n);
-  static boost::xint::integer GetFirstNumberWithNCells(size_t n);
-  static boost::xint::integer GetLastNumberWithNCells(size_t n);
+  static uint64_t GetFirstNumberWithNPlusOneCells(size_t n);
+  static uint64_t GetFirstNumberWithNCells(size_t n);
+  static uint64_t GetLastNumberWithNCells(size_t n);
 
   static void CountProbabilities(ProcessType processType, size_t cellsNumber);
   static void PrintPartitionsAmount(const std::string &fileName);
@@ -67,7 +66,7 @@ public:
   static bool isPartitionsAmountCounted() { return partitionsAmount != 0;}
   static void countPartitionsAmount();
 
-  static const  boost::xint::integer *getPartitionsAmount() { return partitionsAmount; }
+  static const  uint64_t *getPartitionsAmount() { return partitionsAmount; }
   static size_t getLevelSize() { return levelSize; }
   static const long long *getOffsets() { return offsets; }
   static void saveProbabilities(const char *fileName);
@@ -99,7 +98,7 @@ private:
   static void countCoefficientsForKantorovichMetric(size_t diagramNumber, dVector &coefficients, std::vector<size_t> &predecessorsNums);
   
   static const int maxCellsNumber;
-  static boost::xint::integer *partitionsAmount; 
+  static uint64_t *partitionsAmount; 
   static long long *offsets;
   
   static size_t levelSize;

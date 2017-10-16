@@ -1,5 +1,4 @@
 #include <iostream>
-#include <boost\xint\xint.hpp>
 #include "YungDiagram.h"
 #include "YungDiagram3D.h"
 #include "BratelliDiagram.h"

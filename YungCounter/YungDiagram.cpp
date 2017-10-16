@@ -1,5 +1,6 @@
 #include <fstream>
 #include <iostream>
+#include <cstdarg>
 #include <random>
 #include <chrono>
 #include <array>
@@ -13,7 +14,7 @@
 
 using namespace std;
 
-boost::xint::integer *YungDiagramHandler::partitionsAmount = 0;
+uint64_t *YungDiagramHandler::partitionsAmount = 0;
 long long *YungDiagramHandler::offsets = 0;
 double *YungDiagramHandler::probabilities = 0;
 size_t *YungDiagramHandler::numbers = 0;
@@ -56,13 +57,13 @@ YungDiagram::YungDiagram(const string &fileName) : m_cellsNumber(0), m_numberIsC
   }
 }
 
-YungDiagram::YungDiagram(const boost::xint::integer &number) :  m_cellsNumber(0), m_numberIsCounted(true), m_number(0),
+YungDiagram::YungDiagram(uint64_t number) :  m_cellsNumber(0), m_numberIsCounted(true), m_number(0),
   m_probability(0), m_ancestorsNumber(0), m_ancestors(0), m_ancestorsColDifferent(0)
 {
   if (!YungDiagramHandler::isPartitionsAmountCounted())
     YungDiagramHandler::countPartitionsAmount();
 
-  const boost::xint::integer *partitionsAmount = YungDiagramHandler::getPartitionsAmount();
+  const uint64_t *partitionsAmount = YungDiagramHandler::getPartitionsAmount();
   const long long *offsets = YungDiagramHandler::getOffsets();
   size_t maxCellsNumber = YungDiagramHandler::getMaxCellsNumber();
 
@@ -106,7 +107,7 @@ YungDiagram::YungDiagram(const boost::xint::integer &number) :  m_cellsNumber(0)
 void YungDiagramHandler::countPartitionsAmount()
 {
   int size = (maxCellsNumber + 1) * maxCellsNumber >> 1;
-  partitionsAmount = new boost::xint::integer[size];
+  partitionsAmount = new uint64_t[size];
 
   offsets = new long long[maxCellsNumber];
   for (long long i = 0; i < maxCellsNumber; i++)
@@ -151,7 +152,7 @@ void YungDiagramHandler::PrintPartitionsAmount(const string &fileName)
   out.close();
 }
 
-boost::xint::integer YungDiagram::GetDiagramNumber() const
+uint64_t YungDiagram::GetDiagramNumber() const
 {
   if (m_numberIsCounted)
     return m_number;
@@ -160,7 +161,7 @@ boost::xint::integer YungDiagram::GetDiagramNumber() const
   if (!YungDiagramHandler::isPartitionsAmountCounted())
     YungDiagramHandler::countPartitionsAmount();
 
-  const boost::xint::integer *partitionsAmount = YungDiagramHandler::getPartitionsAmount();
+  const uint64_t *partitionsAmount = YungDiagramHandler::getPartitionsAmount();
   const long long *offsets = YungDiagramHandler::getOffsets();
 
   for (size_t i = 0; i < m_cellsNumber - 1; ++i)
@@ -257,7 +258,7 @@ size_t YungDiagramHandler::GetSmallDiagramNumber(size_t cellsNumber, const vecto
   }
 
   for (size_t i = 0; i < cellsNumber - 1; ++i)
-    number += partitionsAmount[offsets[i] + i]._get_digit(0);
+    number += partitionsAmount[offsets[i] + i];
   number += 1;
 
   int n = cellsNumber;
@@ -266,7 +267,7 @@ size_t YungDiagramHandler::GetSmallDiagramNumber(size_t cellsNumber, const vecto
     int colSize = cols[k];
     if (colSize == 1)
       break;
-    number += partitionsAmount[offsets[n - 1] + colSize - 2]._get_digit(0); // with max k'th col less than current
+    number += partitionsAmount[offsets[n - 1] + colSize - 2]; // with max k'th col less than current
     n -= colSize;
   }
 
@@ -274,7 +275,7 @@ size_t YungDiagramHandler::GetSmallDiagramNumber(size_t cellsNumber, const vecto
 }
 
 /// returns number of first Digram with (n + 1) cell
-boost::xint::integer YungDiagramHandler::GetFirstNumberWithNPlusOneCells(size_t n)
+uint64_t YungDiagramHandler::GetFirstNumberWithNPlusOneCells(size_t n)
 {
   if (n >= maxCellsNumber)
   {
@@ -365,7 +366,7 @@ void YungDiagramHandler::CountProbabilities(ProcessType processType, size_t cell
     levelSize = nextLevelSize;
     firstDiagramOnNextLevel = firstDiagramOnNextNextLevel;
 
-    firstDiagramOnNextNextLevel = YungDiagramHandler::GetFirstNumberWithNPlusOneCells(level + 1)._get_digit(0);
+    firstDiagramOnNextNextLevel = YungDiagramHandler::GetFirstNumberWithNPlusOneCells(level + 1);
     nextLevelSize = firstDiagramOnNextNextLevel - firstDiagramOnNextLevel;
     nextLevelDiagrams = new YungDiagram[nextLevelSize];
 
@@ -702,12 +703,12 @@ YungDiagram *YungDiagramHandler::getRandomDiagram(ProcessType procType, size_t n
 
 vector<size_t> YungDiagramHandler::getRandomWalkFrequencies(ProcessType processType, size_t cellsNumber, size_t bucketsNumber, size_t testsNumber, bool needPermutation)
 {
-  boost::xint::integer *leftBounds = new boost::xint::integer[bucketsNumber];
-  boost::xint::integer maxNumberPlusOne = YungDiagramHandler::GetFirstNumberWithNPlusOneCells(cellsNumber);
-  boost::xint::integer minNumber = YungDiagramHandler::GetFirstNumberWithNPlusOneCells(cellsNumber - 1);
+  uint64_t *leftBounds = new uint64_t[bucketsNumber];
+  uint64_t maxNumberPlusOne = YungDiagramHandler::GetFirstNumberWithNPlusOneCells(cellsNumber);
+  uint64_t minNumber = YungDiagramHandler::GetFirstNumberWithNPlusOneCells(cellsNumber - 1);
   
   leftBounds[0] = minNumber;
-  boost::xint::integer intervalSize = (maxNumberPlusOne - minNumber) / bucketsNumber; // may be problems with division: last bucket may become very samll (down to 1 diagram)
+  uint64_t intervalSize = (maxNumberPlusOne - minNumber) / bucketsNumber; // may be problems with division: last bucket may become very samll (down to 1 diagram)
   cout << "Min number is " << minNumber << endl;
   cout << "Max number is " << maxNumberPlusOne << endl;
   cout << "Delta is " << (maxNumberPlusOne - minNumber) << endl;
@@ -716,47 +717,35 @@ vector<size_t> YungDiagramHandler::getRandomWalkFrequencies(ProcessType processT
   for (size_t i = 1; i < bucketsNumber; i++)
     leftBounds[i] = leftBounds[i - 1] + intervalSize;
   vector<size_t> buckets(bucketsNumber, 0);
-  vector<boost::xint::integer> generatedDiagrams;
+  vector<uint64_t> generatedDiagrams;
 
   for (size_t i = 0; i < testsNumber; i++)
   {
     if (i % 1000 == 0)
       cout << i << " processed.\n";
     YungDiagram *d = YungDiagramHandler::getRandomDiagram(processType, cellsNumber);
-    boost::xint::integer number = d->GetDiagramNumber();
+    uint64_t number = d->GetDiagramNumber();
     generatedDiagrams.push_back(number);
     delete d;
   }
 
   if (needPermutation)
   {
-    boost::xint::default_random_generator gen;
-    size_t minLen = boost::xint::highestbit(minNumber);
-    size_t maxLen = boost::xint::highestbit(maxNumberPlusOne);
-    size_t deltaLength = maxLen - minLen;
-    unsigned seed = (size_t)std::chrono::system_clock::now().time_since_epoch().count();
-    std::default_random_engine generator(seed);
-    std::uniform_int_distribution<int> distribution(0, deltaLength);
-    set<boost::xint::integer> newNumbers;
+    std::random_device rd;     // only used once to initialise (seed) engine
+    std::mt19937 rng(rd());    // random-number engine used (Mersenne-Twister in this case)
+    std::uniform_int_distribution<uint64_t> uni(minNumber, maxNumberPlusOne - 1); // guaranteed unbiased
+    set<uint64_t> newNumbers;
 
-    for (size_t i = 0; i < testsNumber; i++)
-    {
-      size_t bitLen = distribution(generator) + minLen;
-      boost::xint::integer num = 0;
-      do 
-      {
-        num = boost::xint::integer::random_by_size(gen, bitLen, true);
-      } while (num < minNumber || num >= maxNumberPlusOne || !newNumbers.insert(num).second);
-    }
-    map<boost::xint::integer, boost::xint::integer> permutation;
-    set<boost::xint::integer>::iterator newNumIter = newNumbers.begin();
+    uint64_t num = uni(rng);
+    map<uint64_t, uint64_t> permutation;
+    set<uint64_t>::iterator newNumIter = newNumbers.begin();
 
     size_t reps = 0;
-    for (boost::xint::integer num : generatedDiagrams)
+    for (uint64_t num : generatedDiagrams)
     {
       if (permutation.find(num) == permutation.end())
       {
-        permutation.insert(std::pair<boost::xint::integer,boost::xint::integer>(num, *newNumIter));
+        permutation.insert(std::pair<uint64_t,uint64_t>(num, *newNumIter));
         newNumIter++;
       }
       else
@@ -766,7 +755,7 @@ vector<size_t> YungDiagramHandler::getRandomWalkFrequencies(ProcessType processT
 
     for (size_t i = 0; i < testsNumber; i++)
     {
-      boost::xint::integer number = permutation.at(generatedDiagrams[i]);
+      uint64_t number = permutation.at(generatedDiagrams[i]);
 
       int p = 0;
       int q = bucketsNumber - 1;
@@ -781,15 +770,15 @@ vector<size_t> YungDiagramHandler::getRandomWalkFrequencies(ProcessType processT
   }
   else // no need to make permutation
   {
-    map<boost::xint::integer, size_t> freqsOfDiagrams; // lets find out how many same diagrams we have got
+    map<uint64_t, size_t> freqsOfDiagrams; // lets find out how many same diagrams we have got
     size_t maxSameDiagramsNumber = 1;
     for (size_t i = 0; i < testsNumber; i++)
     {
-      boost::xint::integer number = generatedDiagrams[i];
+      uint64_t number = generatedDiagrams[i];
 
-      map<boost::xint::integer, size_t>::iterator it = freqsOfDiagrams.find(number);
+      map<uint64_t, size_t>::iterator it = freqsOfDiagrams.find(number);
       if (it == freqsOfDiagrams.end())
-        freqsOfDiagrams.insert(std::pair<boost::xint::integer, size_t>(number, 1));
+        freqsOfDiagrams.insert(std::pair<uint64_t, size_t>(number, 1));
       else
       {
         it->second++;
@@ -913,8 +902,8 @@ double YungDiagramHandler::countKantorovichDistance(YungDiagram &d1, YungDiagram
   // BUT, IF it turns out that this diagram is predecessor for both of top level diagrams,
   // we should count it's flag to be 3 - bits for both
 
-  neededDiagrams.push_back(d1.GetDiagramNumber()._get_digit(0));
-  neededDiagrams.push_back(d2.GetDiagramNumber()._get_digit(0));
+  neededDiagrams.push_back(d1.GetDiagramNumber());
+  neededDiagrams.push_back(d2.GetDiagramNumber());
   ancestorFlags.push_back(1);
   ancestorFlags.push_back(2);
 
@@ -1083,15 +1072,15 @@ size_t YungDiagramHandler::GetSmallDiagramNumber(size_t colsNumber, ...)
 
   va_end(vl);
   std::sort(d.m_cols.begin(), d.m_cols.end(), std::greater<size_t>());
-  return d.GetDiagramNumber()._get_digit(0);
+  return d.GetDiagramNumber();
 }
 
-boost::xint::integer YungDiagramHandler::GetFirstNumberWithNCells(size_t n)
+uint64_t YungDiagramHandler::GetFirstNumberWithNCells(size_t n)
 {
   return GetFirstNumberWithNPlusOneCells(n - 1);
 }
 
-boost::xint::integer YungDiagramHandler::GetLastNumberWithNCells(size_t n)
+uint64_t YungDiagramHandler::GetLastNumberWithNCells(size_t n)
 {
   return GetFirstNumberWithNPlusOneCells(n) - 1;
 }
@@ -1153,8 +1142,8 @@ void YungDiagramHandler::getBall(size_t num, double r, vector<size_t> &ballDiagr
 {
   YungDiagram d(num);
   size_t cellsNum = d.getCellsNumber();
-  size_t n1 = GetFirstNumberWithNCells(cellsNum)._get_digit(0);
-  size_t n2 = GetLastNumberWithNCells(cellsNum)._get_digit(0);
+  size_t n1 = GetFirstNumberWithNCells(cellsNum);
+  size_t n2 = GetLastNumberWithNCells(cellsNum);
 
   for (size_t i = n1; i <= n2; i++)
   {
@@ -1172,8 +1161,8 @@ void YungDiagramHandler::getDistancesToSomeDiagrams(size_t num, size_t diagramsN
 {
   YungDiagram d(num);
   size_t cellsNum = d.getCellsNumber();
-  size_t n1 = GetFirstNumberWithNCells(cellsNum)._get_digit(0);
-  size_t n2 = GetLastNumberWithNCells(cellsNum)._get_digit(0);
+  size_t n1 = GetFirstNumberWithNCells(cellsNum);
+  size_t n2 = GetLastNumberWithNCells(cellsNum);
 
   double delta = 1;
   size_t maxOffset = n2 - n1;

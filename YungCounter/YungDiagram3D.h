@@ -1,13 +1,13 @@
 #pragma once
 
-#include <boost\xint\xint.hpp>
 #include <map>
 #include <vector>
+#include <boost/multiprecision/cpp_int.hpp>
 #include "globaldefinitions.h"
 
 typedef std::pair<size_t, size_t> ind_pair;
 typedef std::pair<ind_pair, size_t> col_element;
-
+typedef boost::multiprecision::cpp_int mpz_int;
 class YungDiagram3D
 {
 public:
@@ -20,19 +20,19 @@ public:
 
   YungDiagram3D();
   explicit YungDiagram3D(const std::string &fileName);
-  explicit YungDiagram3D(const boost::xint::integer &number);
+  explicit YungDiagram3D(const mpz_int &number);
   ~YungDiagram3D();
 
   inline bool isCornerCell(size_t x, size_t y) const;
   inline bool canRemoveCell(size_t x, size_t y) const;
-  void getPredeccessors(std::map<boost::xint::integer, std::vector<boost::xint::integer> > &predeccessors,
-    std::map<boost::xint::integer, std::vector<ind_pair> > &dif_cells);
+  void getPredeccessors(std::map<mpz_int, std::vector<mpz_int> > &predeccessors,
+    std::map<mpz_int, std::vector<ind_pair> > &dif_cells);
 
   inline double countTransitiveProb(size_t x, size_t y) const;
   void saveToFile(const char *fileName, bool forMatlab = false) const;
   void printToConsole() const;
   void readFromFile(const char *fileName);
-  boost::xint::integer GetDiagramNumber(bool forceRecount = false);
+  mpz_int GetDiagramNumber(bool forceRecount = false);
 
   // own data
   size_t m_cellsNumber;
@@ -40,7 +40,7 @@ public:
   mutable std::map<ind_pair, size_t> m_cols;
 
   mutable bool m_numberIsCounted;
-  mutable boost::xint::integer m_number;
+  mutable mpz_int m_number;
 };
 
 class YungDiagram3DHandler
@@ -58,8 +58,8 @@ public:
   static std::map<ind_pair, size_t> primesToCells; // each cell has it's own prime number
   static bool primesAreCounted;
   static double countDistance(YungDiagram3D &d1, YungDiagram3D &d2);
-  static void countCoefficientsForKantorovichMetric(boost::xint::integer diagramNum, 
-    std::map<boost::xint::integer, double> &probs, dVector &c, 
-    std::map<boost::xint::integer, std::vector<boost::xint::integer> > &preds, std::map<boost::xint::integer, std::vector<ind_pair> > &dif_cells,
-    std::map<boost::xint::integer, double> &newProbs);
+  static void countCoefficientsForKantorovichMetric(mpz_int diagramNum, 
+    std::map<mpz_int, double> &probs, dVector &c, 
+    std::map<mpz_int, std::vector<mpz_int> > &preds, std::map<mpz_int, std::vector<ind_pair> > &dif_cells,
+    std::map<mpz_int, double> &newProbs);
 };

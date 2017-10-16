@@ -1,5 +1,4 @@
 #pragma once
-#include <boost\xint\xint.hpp>
 #include "globaldefinitions.h"
 #include <vector>
 
