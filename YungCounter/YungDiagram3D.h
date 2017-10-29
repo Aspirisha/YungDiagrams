@@ -1,6 +1,7 @@
 #pragma once
 
 #include <map>
+#include <unordered_map>
 #include <vector>
 #include <boost/multiprecision/cpp_int.hpp>
 #include "globaldefinitions.h"
@@ -37,7 +38,7 @@ public:
   // own data
   size_t m_cellsNumber;
   std::vector<size_t> m_rowsY; // size of it is number of rows in x
-  mutable std::map<ind_pair, size_t> m_cols;
+  mutable std::unordered_map<ind_pair, size_t, std::function<size_t(ind_pair)>> m_cols;
 
   mutable bool m_numberIsCounted;
   mutable mpz_int m_number;
